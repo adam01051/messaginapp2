@@ -12,13 +12,14 @@ import pg from "pg";
 					password: "4909770",
 					port: 5432,
                 });
-                const result = await db.query("select * from users");
-				console.log("postgres is connected", result.rows);
+                await db.connect();
+				
 			} catch (error) {
 				console.log("postgres connection error:", error);
 			}
 		};
     
+        
 
 
 
