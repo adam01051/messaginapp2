@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-
+import { connectPS } from "./lib/postgres.js";
 import path from "path";
 
 import { connectDB } from "./lib/db.js";
@@ -55,5 +55,8 @@ if (process.env.NODE_ENV === "production") {
 
 server.listen(PORT, () => {
 	console.log("server is running on PORT:" + PORT);
+	connectPS();
 	connectDB();
+
+
 });

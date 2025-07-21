@@ -1,15 +1,25 @@
 
-import pg from "np";
+import pg from "pg";
 
 
-const db = new pg.Client({
-    user: "postgres",
-    host: "localhost",
-    database: "messagin_app",
-    password: "4909770",
-    port: 5432,
-})
-db.connect();
+
+    export const connectPS = async () => {
+			try {
+				const db = new pg.Client({
+					user: "postgres",
+					host: "localhost",
+					database: "messaging_app",
+					password: "4909770",
+					port: 5432,
+                });
+                const result = await db.query("select * from users");
+				console.log("postgres is connected", result.rows);
+			} catch (error) {
+				console.log("postgres connection error:", error);
+			}
+		};
+    
+
 
 
 
