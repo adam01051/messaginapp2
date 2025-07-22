@@ -1,7 +1,7 @@
 import React from "react";
 import { useThemeStore } from "../store/useThemeStore.js";
 import { Send } from "lucide-react";
-import { THEMES } from "../constants";
+import { THEMES } from "../constants/index.js";
 
 const PREVIEW_MESSAGES = [
   { id: 1, content: "Hey! How's it going in Seoul?", isSent: false },
@@ -12,7 +12,7 @@ const PREVIEW_MESSAGES = [
   },
 ];
 
-const SettingsPage = () => {
+const ThemePage = () => {
   const { theme, setTheme } = useThemeStore();
 
   return (
@@ -131,4 +131,4 @@ const SettingsPage = () => {
 		</div>
 	);
 };
-export default SettingsPage;
+export default ThemePage;

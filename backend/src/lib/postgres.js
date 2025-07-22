@@ -1,8 +1,6 @@
 
 import pg from "pg";
 
-
-
     export const connectPS = async () => {
 			try {
 				const db = new pg.Client({

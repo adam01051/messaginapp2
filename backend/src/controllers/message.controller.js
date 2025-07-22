@@ -1,15 +1,17 @@
 import User from "../models/user.model.js";
 import Message from "../models/message.model.js";
+import { connectPS } from "../lib/postgres.js";
 
 import cloudinary from "../lib/cloudinary.js";
 import { getReceiverSocketId, io } from "../lib/socket.js";
 
 export const getUsersForSidebar = async (req, res) => {
 	try {
-		const loggedInUserId = req.user._id;
-		const filteredUsers = await User.find({
-			_id: { $ne: loggedInUserId },
-		}).select("-password");
+		const loggedInUserId = req.user.id;
+		const db = await connectPS();
+		const result = await db.query("select name, email,profileimage,username from users where id != $1",[loggedInUserId]);
+
+		const filteredUsers = result.rows;
 
 		res.status(200).json(filteredUsers);
 	} catch (error) {
@@ -23,12 +25,12 @@ export const getMessages = async (req, res) => {
 		const { id: userToChatId } = req.params;
 		const myId = req.user._id;
 
-		const messages = await Message.find({
+		/* 	const messages = await Message.find({
 			$or: [
 				{ senderId: myId, receiverId: userToChatId },
 				{ senderId: userToChatId, receiverId: myId },
 			],
-		});
+		});*/
 
 		res.status(200).json(messages);
 	} catch (error) {

@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
-import User from "../models/user.model.js";
+import { connectPS } from "../lib/postgres.js";
+
 
 export const protectRoute = async (req, res, next) => {
 	try {
@@ -17,13 +18,16 @@ export const protectRoute = async (req, res, next) => {
 			return res.status(401).json({ message: "Unauthorized - Invalid Token" });
 		}
 
-		//const user = await User.findById(decoded.userId).select("-password");
+		
 
-		if (!user) {
+		const db = await connectPS();
+		const result = await db.query("select id, username, email from users where id = $1",[decoded.userId]);
+	
+		if (result.rows.length === 0) {
 			return res.status(404).json({ message: "User not found" });
 		}
 
-		req.user = user;
+		req.user = result.rows[0];
 
 		next();
 	} catch (error) {

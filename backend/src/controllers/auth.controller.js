@@ -1,5 +1,5 @@
 import { generateToken } from "../lib/utils.js";
-import User from "../models/user.model.js";
+
 import bcrypt from "bcryptjs";
 import cloudinary from "../lib/cloudinary.js";
 import { connectPS } from "../lib/postgres.js";
@@ -23,7 +23,7 @@ export const signup = async (req, res) => {
 			email,
 		]);
 
-		if (checkEmail.length > 0)
+		if (checkEmail.rows.length > 0)
 			return res.status(400).json({ message: "Email already exists" });
 
 		const salt = await bcrypt.genSalt(10);
@@ -72,7 +72,7 @@ export const login = async (req, res) => {
 			return res.status(400).json({ message: "Invalid credentials" });
 		}
 
-	///generateToken(user.id, res);
+		generateToken(user.id, res);
 
 		res.status(200).json({
 			id: user.id,
@@ -81,7 +81,7 @@ export const login = async (req, res) => {
 			profilePic: user.profilePic,
 			username : user.username,
 
-		});
+		}); 
 	} catch (error) {
 		console.log("Error in login controller", error.message);
 		res.status(500).json({ message: "Internal Server Error" });
@@ -101,19 +101,21 @@ export const logout = (req, res) => {
 export const updateProfile = async (req, res) => {
 	try {
 		const { profilePic } = req.body;
-		const userId = req.user._id;
-
+		const userId = req.user.id;
+		const db = await connectPS();
+		
 		if (!profilePic) {
 			return res.status(400).json({ message: "Profile pic is required" });
 		}
 
 		const uploadResponse = await cloudinary.uploader.upload(profilePic);
-		const updatedUser = await User.findByIdAndUpdate(
-			userId,
-			{ profilePic: uploadResponse.secure_url },
-			{ new: true }
-		);
 
+		const updatedUser = await db.query(
+			`UPDATE users SET profileimage = $1 WHERE id = $2 RETURNING id, name AS fullName, email, username, profileimage`,
+			[uploadResponse.secure_url, userId]
+		);
+		
+	
 		res.status(200).json(updatedUser);
 	} catch (error) {
 		console.log("error in update profile:", error);

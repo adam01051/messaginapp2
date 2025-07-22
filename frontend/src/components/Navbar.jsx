@@ -26,14 +26,14 @@ const Navbar = () => {
 
           <div className="flex items-center gap-2">
             <Link
-              to={"/settings"}
+              to={"/themeset"}
               className={`
               btn btn-sm gap-2 transition-colors
               
               `}
             >
               <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">Settings</span>
+              <span className="hidden sm:inline">Theme</span>
             </Link>
 
             {authUser && (
