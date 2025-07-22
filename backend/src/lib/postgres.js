@@ -12,8 +12,9 @@ import pg from "pg";
 					password: "4909770",
 					port: 5432,
                 });
-                await db.connect();
-				
+               await db.connect();
+                console.log("postgres is connected")
+                return db;
 			} catch (error) {
 				console.log("postgres connection error:", error);
 			}

@@ -2,9 +2,10 @@ import { generateToken } from "../lib/utils.js";
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 import cloudinary from "../lib/cloudinary.js";
+import { connectPS } from "../lib/postgres.js";
 
 export const signup = async (req, res) => {
-	const { fullName, email, password } = req.body;
+	const { fullName, email, password, username } = req.body;
 	try {
 		if (!fullName || !email || !password) {
 			return res.status(400).json({ message: "All fields are required" });
@@ -16,30 +17,29 @@ export const signup = async (req, res) => {
 				.json({ message: "Password must be at least 6 characters" });
 		}
 
-		const user = await User.findOne({ email });
+		const db = await connectPS();
 
-		if (user) return res.status(400).json({ message: "Email already exists" });
+		const checkEmail = await db.query("select * from users where email = $1", [
+			email,
+		]);
+
+		if (checkEmail.length > 0)
+			return res.status(400).json({ message: "Email already exists" });
 
 		const salt = await bcrypt.genSalt(10);
 		const hashedPassword = await bcrypt.hash(password, salt);
 
-		const newUser = new User({
-			fullName,
-			email,
-			password: hashedPassword,
-		});
-
-		if (newUser) {
+		const result = await db.query(
+			"insert into users (name, email,username, password_) values ($1, $2, $3, $4) RETURNING id, name AS fullName, email,username",
+			[fullName, email, username, hashedPassword]
+		);
+		const newUser = result.rows[0];
+		console.log(newUser);
+	if (newUser) {
 			// generate jwt token here
-			generateToken(newUser._id, res);
-			await newUser.save();
+			const r1 = generateToken(newUser.id, res);
 
-			res.status(201).json({
-				_id: newUser._id,
-				fullName: newUser.fullName,
-				email: newUser.email,
-				profilePic: newUser.profilePic,
-			});
+			res.status(201).json(newUser);
 		} else {
 			res.status(400).json({ message: "Invalid user data" });
 		}
@@ -52,24 +52,35 @@ export const signup = async (req, res) => {
 export const login = async (req, res) => {
 	const { email, password } = req.body;
 	try {
-		const user = await User.findOne({ email });
+		const db = await connectPS();
+		const userDetails = await db.query(
+			"SELECT * FROM users WHERE email = $1",
+			[email]
+		);
 
+		const user = userDetails.rows[0];
+
+		
 		if (!user) {
+			console.log("working login email check");
 			return res.status(400).json({ message: "Invalid credentials" });
 		}
 
-		const isPasswordCorrect = await bcrypt.compare(password, user.password);
+		const isPasswordCorrect = await bcrypt.compare(password, user.password_);
 		if (!isPasswordCorrect) {
+			console.log("pass incorrect");
 			return res.status(400).json({ message: "Invalid credentials" });
 		}
 
-		generateToken(user._id, res);
+	///generateToken(user.id, res);
 
 		res.status(200).json({
-			_id: user._id,
+			id: user.id,
 			fullName: user.fullName,
 			email: user.email,
 			profilePic: user.profilePic,
+			username : user.username,
+
 		});
 	} catch (error) {
 		console.log("Error in login controller", error.message);

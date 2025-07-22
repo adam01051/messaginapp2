@@ -20,7 +20,8 @@ const SignupPage = () => {
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
-    password: "",
+	password: "",
+	username:"",
   });
 
   const { signup, isSigningUp } = useAuthStore();
@@ -33,7 +34,9 @@ const SignupPage = () => {
     if (!formData.password) return toast.error("Password is required");
     if (formData.password.length < 6)
       return toast.error("Password must be at least 6 characters");
-
+	if (/\s/.test(formData.fullName)) {
+		return toast.error("Username must not contain spaces");
+	}
     return true;
   };
   const handleSubmit = (e) => {
@@ -80,6 +83,25 @@ const SignupPage = () => {
 									value={formData.fullName}
 									onChange={(e) =>
 										setFormData({ ...formData, fullName: e.target.value })
+									}
+								/>
+							</div>
+						</div>
+						<div className="form-control">
+							<label className="label">
+								<span className="label-text font-medium">Username</span>
+							</label>
+							<div className="relative">
+								<div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+									<User className="size-5 text-base-content/40" />
+								</div>
+								<input
+									type="text"
+									className={`input input-bordered w-full pl-10`}
+									placeholder="@Jonh_doe"
+									value={formData.username}
+									onChange={(e) =>
+										setFormData({ ...formData, username: e.target.value })
 									}
 								/>
 							</div>
