@@ -21,7 +21,7 @@ export const protectRoute = async (req, res, next) => {
 		
 
 		const db = await connectPS();
-		const result = await db.query("select id, username, email from users where id = $1",[decoded.userId]);
+		const result = await db.query("select id, username, email,profileimage,name from users where id = $1",[decoded.userId]);
 	
 		if (result.rows.length === 0) {
 			return res.status(404).json({ message: "User not found" });

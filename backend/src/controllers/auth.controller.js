@@ -34,7 +34,7 @@ export const signup = async (req, res) => {
 			[fullName, email, username, hashedPassword]
 		);
 		const newUser = result.rows[0];
-		console.log(newUser);
+	
 	if (newUser) {
 			// generate jwt token here
 			const r1 = generateToken(newUser.id, res);
@@ -59,7 +59,7 @@ export const login = async (req, res) => {
 		);
 
 		const user = userDetails.rows[0];
-
+	
 		
 		if (!user) {
 			console.log("working login email check");
@@ -74,13 +74,13 @@ export const login = async (req, res) => {
 
 		generateToken(user.id, res);
 
-		res.status(200).json({
+		res.status(200).json({ 
 			id: user.id,
-			fullName: user.fullName,
+			fullName: user.name,
 			email: user.email,
-			profilePic: user.profilePic,
-			username : user.username,
-
+			profilePic: user.profileimage,
+			username: user.username,
+			
 		}); 
 	} catch (error) {
 		console.log("Error in login controller", error.message);
@@ -116,7 +116,7 @@ export const updateProfile = async (req, res) => {
 		);
 		
 	
-		res.status(200).json(updatedUser);
+		res.status(200).json(updatedUser.rows[0]);
 	} catch (error) {
 		console.log("error in update profile:", error);
 		res.status(500).json({ message: "Internal server error" });

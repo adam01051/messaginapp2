@@ -9,9 +9,13 @@ export const getUsersForSidebar = async (req, res) => {
 	try {
 		const loggedInUserId = req.user.id;
 		const db = await connectPS();
-		const result = await db.query("select name, email,profileimage,username from users where id != $1",[loggedInUserId]);
+		const result = await db.query(
+			"select id,name, email, profileimage,username from users where id != $1",
+			[loggedInUserId]
+		);
 
 		const filteredUsers = result.rows;
+		
 
 		res.status(200).json(filteredUsers);
 	} catch (error) {
