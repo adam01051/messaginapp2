@@ -20,13 +20,13 @@ const ChatContainer = () => {
 	const messageEndRef = useRef(null);
 
 	useEffect(() => {
-		getMessages(selectedUser._id);
+		getMessages(selectedUser.id);
 
 		subscribeToMessages();
 
 		return () => unsubscribeFromMessages();
 	}, [
-		selectedUser._id,
+		selectedUser.id,
 		getMessages,
 		subscribeToMessages,
 		unsubscribeFromMessages,
