@@ -28,14 +28,15 @@ export const getMessages = async (req, res) => {
 	try {
 		const { id: userToChatId } = req.params;
 		const myId = req.user.id;
-		console.log(userToChatId, "users id ");
-
-		console.log(myId);
+	
 		const db = await connectPS();
-		const result = await db.query("");
-		
+		const result = await db.query(
+			"select * from messages where (sender_id =$1 and receiver_id =$2 ) or (sender_id =$2 and receiver_id =$1 ) ORDER BY created_at ASC",
+			[myId, userToChatId]
+		);
+		const messages = result.rows;
 
-		res.status(200).json();
+		res.status(200).json(messages);
 	} catch (error) {
 		console.log("Error in getMessages controller: ", error.message);
 		res.status(500).json({ error: "Internal server error" });
@@ -46,7 +47,7 @@ export const sendMessage = async (req, res) => {
 	try {
 		const { text, image } = req.body;
 		const { id: receiverId } = req.params;
-		const senderId = req.user._id;
+		const myId = req.user.id;
 
 		let imageUrl;
 		if (image) {
@@ -55,15 +56,14 @@ export const sendMessage = async (req, res) => {
 			imageUrl = uploadResponse.secure_url;
 		}
 
-		const newMessage = new Message({
-			senderId,
-			receiverId,
-			text,
-			image: imageUrl,
-		});
-
-		await newMessage.save();
-
+		const db = await connectPS();
+		const result = await db.query(
+			"insert into messages  (sender_id , receiver_id, content, image) values ($1,$2,$3,$4) returning *",
+			[myId, receiverId, text, imageUrl]
+		);
+		
+		const newMessage = result.rows[0];
+		
 		const receiverSocketId = getReceiverSocketId(receiverId);
 		if (receiverSocketId) {
 			io.to(receiverSocketId).emit("newMessage", newMessage);
