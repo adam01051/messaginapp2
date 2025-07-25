@@ -15,10 +15,10 @@ const Sidebar = () => {
 		getUsers();
 	}, [getUsers]);
 
-	console.log(showOnlineOnly);
+
 	const safeUsers = Array.isArray(users) ? users : [];
 	const filteredUsers = showOnlineOnly
-		? safeUsers.filter((user) => onlineUsers.includes(user.id))
+		? safeUsers.filter((user) => onlineUsers.includes(user.id.toString()))
 		: safeUsers;
 
 	if (isUsersLoading) return <SidebarSkeleton />;
@@ -30,7 +30,7 @@ const Sidebar = () => {
 					<Users className="size-6" />
 					<span className="font-medium hidden lg:block">Contacts</span>
 				</div>
-				{/* TODO: Online filter toggle */}
+				
 				<div className="mt-3 hidden lg:flex items-center gap-2">
 					<label className="cursor-pointer flex items-center gap-2">
 						<input
@@ -56,7 +56,7 @@ const Sidebar = () => {
               w-full p-3 flex items-center gap-3
               hover:bg-base-300 transition-colors
               ${
-								selectedUser?.id === user.id
+								selectedUser?.id.toString() === user.id.toString()
 									? "bg-base-300 ring-1 ring-base-300"
 									: ""
 							}
@@ -68,7 +68,7 @@ const Sidebar = () => {
 								alt={user.name}
 								className="size-12 object-cover rounded-full"
 							/>
-							{onlineUsers.includes(user.id) && (
+							{onlineUsers.includes(user.id.toString()) && (
 								<span
 									className="absolute bottom-0 right-0 size-3 bg-green-500 
                   rounded-full ring-2 ring-zinc-900"
@@ -80,7 +80,9 @@ const Sidebar = () => {
 						<div className="hidden lg:block text-left min-w-0">
 							<div className="font-medium truncate">{user.name}</div>
 							<div className="text-sm text-zinc-400">
-								{onlineUsers.includes(user._id) ? "Online" : "Offline"}
+								{onlineUsers.includes(user.id.toString())
+									? "Online"
+									: "Offline"}
 							</div>
 						</div>
 					</button>
