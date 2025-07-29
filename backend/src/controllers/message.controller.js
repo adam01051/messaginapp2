@@ -9,11 +9,27 @@ export const getUsersForSidebar = async (req, res) => {
 	try {
 		const loggedInUserId = req.user.id;
 		const db = await connectPS();
+		
 		const result = await db.query(
-			"select id,name, email, profileimage,username from users where id != $1",
+			`SELECT 
+			  u.id,
+			  u.name,
+			  u.email,
+			  u.profileimage,
+			  u.username,
+			  MAX(m.created_at) AS last_message_time
+			 FROM users u
+			 LEFT JOIN messages m 
+			   ON (u.id = m.sender_id AND m.receiver_id = $1) 
+			   OR (u.id = m.receiver_id AND m.sender_id = $1)
+			 WHERE u.id != $1
+			 GROUP BY u.id
+			 ORDER BY last_message_time DESC NULLS LAST`,
 			[loggedInUserId]
 		);
-
+	  
+	  
+	
 		const filteredUsers = result.rows;
 		
 
@@ -62,12 +78,14 @@ export const sendMessage = async (req, res) => {
 			[myId, receiverId, text, imageUrl]
 		);
 		
-		const newMessage = result.rows[0];
+		const newMessage = result.rows[0]
 		
 		const receiverSocketId = getReceiverSocketId(receiverId);
 		if (receiverSocketId) {
 			io.to(receiverSocketId).emit("newMessage", newMessage);
+			
 		}
+	
 
 		res.status(201).json(newMessage);
 	} catch (error) {

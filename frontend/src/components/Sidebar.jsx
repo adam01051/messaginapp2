@@ -5,8 +5,14 @@ import SidebarSkeleton from "./skeletons/SidebarSkeleton";
 import { Users } from "lucide-react";
 
 const Sidebar = () => {
-	const { getUsers, users, selectedUser, setSelectedUser, isUsersLoading } =
-		useChatStore();
+	const {
+		getUsers,
+		users,
+		selectedUser,
+		setSelectedUser,
+		isUsersLoading,
+		newMessages,
+	} = useChatStore();
 
 	const { onlineUsers } = useAuthStore();
 	const [showOnlineOnly, setShowOnlineOnly] = useState(false);
@@ -14,7 +20,6 @@ const Sidebar = () => {
 	useEffect(() => {
 		getUsers();
 	}, [getUsers]);
-
 
 	const safeUsers = Array.isArray(users) ? users : [];
 	const filteredUsers = showOnlineOnly
@@ -30,7 +35,8 @@ const Sidebar = () => {
 					<Users className="size-6" />
 					<span className="font-medium hidden lg:block">Contacts</span>
 				</div>
-				
+
+				{/* Online filter */}
 				<div className="mt-3 hidden lg:flex items-center gap-2">
 					<label className="cursor-pointer flex items-center gap-2">
 						<input
@@ -69,16 +75,20 @@ const Sidebar = () => {
 								className="size-12 object-cover rounded-full"
 							/>
 							{onlineUsers.includes(user.id.toString()) && (
-								<span
-									className="absolute bottom-0 right-0 size-3 bg-green-500 
-                  rounded-full ring-2 ring-zinc-900"
-								/>
+								<span className="absolute bottom-0 right-0 size-3 bg-green-500 rounded-full ring-2 ring-zinc-900" />
 							)}
 						</div>
 
-						{/* User info - only visible on larger screens */}
-						<div className="hidden lg:block text-left min-w-0">
-							<div className="font-medium truncate">{user.name}</div>
+						{/* User info */}
+						<div className="hidden lg:block text-left min-w-0 flex-1">
+							<div className="flex justify-between items-center">
+								<span className="font-medium truncate">{user.name}</span>
+								{newMessages[user.id] && (
+									<span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full ml-2">
+										New
+									</span>
+								)}
+							</div>
 							<div className="text-sm text-zinc-400">
 								{onlineUsers.includes(user.id.toString())
 									? "Online"
@@ -95,4 +105,5 @@ const Sidebar = () => {
 		</aside>
 	);
 };
+
 export default Sidebar;
