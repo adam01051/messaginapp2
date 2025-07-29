@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
-import { connectPS } from "../lib/postgres.js";
 
+import pool from "../lib/postgres.js";
 
 export const protectRoute = async (req, res, next) => {
 	try {
@@ -20,8 +20,7 @@ export const protectRoute = async (req, res, next) => {
 
 		
 
-		const db = await connectPS();
-		const result = await db.query("select id, username, email,profileimage,name from users where id = $1",[decoded.userId]);
+		const result = await pool.query("select id, username, email,profileimage,name from users where id = $1",[decoded.userId]);
 	
 		if (result.rows.length === 0) {
 			return res.status(404).json({ message: "User not found" });

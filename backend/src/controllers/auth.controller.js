@@ -2,7 +2,8 @@ import { generateToken } from "../lib/utils.js";
 
 import bcrypt from "bcryptjs";
 import cloudinary from "../lib/cloudinary.js";
-import { connectPS } from "../lib/postgres.js";
+import pool from "../lib/postgres.js";
+
 
 export const signup = async (req, res) => {
 	const { fullName, email, password, username } = req.body;
@@ -17,9 +18,9 @@ export const signup = async (req, res) => {
 				.json({ message: "Password must be at least 6 characters" });
 		}
 
-		const db = await connectPS();
+		
 
-		const checkEmail = await db.query("select * from users where email = $1", [
+		const checkEmail = await pool.query("select * from users where email = $1", [
 			email,
 		]);
 
@@ -29,7 +30,7 @@ export const signup = async (req, res) => {
 		const salt = await bcrypt.genSalt(10);
 		const hashedPassword = await bcrypt.hash(password, salt);
 
-		const result = await db.query(
+		const result = await pool.query(
 			"insert into users (name, email,username, password_) values ($1, $2, $3, $4) RETURNING id, name AS fullName, email,username",
 			[fullName, email, username, hashedPassword]
 		);
@@ -52,8 +53,8 @@ export const signup = async (req, res) => {
 export const login = async (req, res) => {
 	const { email, password } = req.body;
 	try {
-		const db = await connectPS();
-		const userDetails = await db.query(
+
+		const userDetails = await pool.query(
 			"SELECT * FROM users WHERE email = $1",
 			[email]
 		);
@@ -102,7 +103,7 @@ export const updateProfile = async (req, res) => {
 	try {
 		const { profilePic } = req.body;
 		const userId = req.user.id;
-		const db = await connectPS();
+	
 		
 		if (!profilePic) {
 			return res.status(400).json({ message: "Profile pic is required" });
@@ -110,7 +111,7 @@ export const updateProfile = async (req, res) => {
 
 		const uploadResponse = await cloudinary.uploader.upload(profilePic);
 
-		const updatedUser = await db.query(
+		const updatedUser = await pool.query(
 			`UPDATE users SET profileimage = $1 WHERE id = $2 RETURNING id, name AS fullName, email, username, profileimage`,
 			[uploadResponse.secure_url, userId]
 		);

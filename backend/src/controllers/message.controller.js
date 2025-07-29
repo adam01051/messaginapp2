@@ -1,16 +1,14 @@
-import User from "../models/user.model.js";
-import Message from "../models/message.model.js";
-import { connectPS } from "../lib/postgres.js";
 
+import pool from "../lib/postgres.js";
 import cloudinary from "../lib/cloudinary.js";
 import { getReceiverSocketId, io } from "../lib/socket.js";
 
 export const getUsersForSidebar = async (req, res) => {
 	try {
 		const loggedInUserId = req.user.id;
-		const db = await connectPS();
+
 		
-		const result = await db.query(
+		const result = await pool.query(
 			`SELECT 
 			  u.id,
 			  u.name,
@@ -45,8 +43,8 @@ export const getMessages = async (req, res) => {
 		const { id: userToChatId } = req.params;
 		const myId = req.user.id;
 	
-		const db = await connectPS();
-		const result = await db.query(
+
+		const result = await pool.query(
 			"select * from messages where (sender_id =$1 and receiver_id =$2 ) or (sender_id =$2 and receiver_id =$1 ) ORDER BY created_at ASC",
 			[myId, userToChatId]
 		);
@@ -72,8 +70,8 @@ export const sendMessage = async (req, res) => {
 			imageUrl = uploadResponse.secure_url;
 		}
 
-		const db = await connectPS();
-		const result = await db.query(
+
+		const result = await pool.query(
 			"insert into messages  (sender_id , receiver_id, content, image) values ($1,$2,$3,$4) returning *",
 			[myId, receiverId, text, imageUrl]
 		);

@@ -1,24 +1,26 @@
+import pkg from "pg";
+const { Pool } = pkg;
 
-import pg from "pg";
+export const pool = new Pool({
+	user: "postgres",
+	host: "localhost",
+	database: "messaging_app",
+	password: "4909770",
+	port: 5432,
+});
 
-    export const connectPS = async () => {
-			try {
-				const db = new pg.Client({
-					user: "postgres",
-					host: "localhost",
-					database: "messaging_app",
-					password: "4909770",
-					port: 5432,
-                });
-               await db.connect();
-                console.log("postgres is connected")
-                return db;
-			} catch (error) {
-				console.log("postgres connection error:", error);
-			}
-		};
-    
-        
+// Optional: Test the connection once
+pool
+	.connect()
+	.then((client) => {
+		console.log("Postgres is connected");
+		client.release(); // release back to pool
+	})
+	.catch((error) => {
+		console.log("Postgres connection error:", error.message);
+	});
+
+export default pool;
 
 
 
