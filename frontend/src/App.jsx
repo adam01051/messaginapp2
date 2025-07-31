@@ -11,8 +11,9 @@ import { useAuthStore } from "./store/useAuthStore";
 import { useThemeStore } from "./store/useThemeStore";
 import { useEffect } from "react";
 
-import { Loader } from "lucide-react";
+import { Loader, Search } from "lucide-react";
 import { Toaster } from "react-hot-toast";
+import SearchPage from "./pages/SearchPage";
 
 const App = () => {
 	const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
@@ -50,6 +51,11 @@ const App = () => {
 				<Route
 					path="/profile"
 					element={authUser ? <ProfilePage /> : <Navigate to="/login" />}
+				/>
+
+				<Route
+					path="/usersearch"
+					element={authUser ? <SearchPage /> : <Navigate to="/login" />}
 				/>
 			</Routes>
 

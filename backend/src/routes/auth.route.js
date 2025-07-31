@@ -9,7 +9,9 @@ router.post("/login", login);
 router.post("/logout", logout);
 router.put("/update-profile",protectRoute  ,updateProfile);
 router.get("/check", protectRoute, checkAuth);
+router.get("/usersearch", protectRoute);
 
 export default router;
-   
+    
 
+  
