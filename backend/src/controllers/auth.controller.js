@@ -49,6 +49,21 @@ export const signup = async (req, res) => {
 		res.status(500).json({ message: "Internal Server Error" });
 	}
 };
+export const searchUser = async (req, res) => {
+	const { username } = req.query; // ✅ GET requests should use query
+	try {
+		const result = await pool.query(
+			"SELECT * FROM users WHERE username ILIKE $1", // ILIKE for case-insensitive search
+			[username] // % for partial matches
+		);
+
+		console.log(result.rows);
+		res.json(result.rows); // ✅ return results to frontend
+	} catch (error) {
+		console.log("Error in searchUser:", error.message);
+		res.status(500).json({ message: "problem in finding user" });
+	}
+};
 
 export const login = async (req, res) => {
 	const { email, password } = req.body;
@@ -126,6 +141,7 @@ export const updateProfile = async (req, res) => {
 
 export const checkAuth = (req, res) => {
 	try {
+		
 		res.status(200).json(req.user);
 	} catch (error) {
 		console.log("Error in checkAuth controller", error.message);
