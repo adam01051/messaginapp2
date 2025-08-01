@@ -17,13 +17,29 @@ export const useAuthStore = create((set, get) => ({
 	isCheckingAuth: true,
 	onlineUsers: [],
 	socket: null,
-	searchResults: [],
+	searchResults: null,
+	addResults: null,
+
+	addUser: async (username) => {
+		try {
+			const res = await axiosInstance.get("/auth/add-user", {
+				params: { username },
+			});
+			set({ addResults: res.data });
+			toast.success("Contact successfully added");
+		} catch (error) {
+			console.error("Error in adding user", error);
+			set({ addResults: [] });
+			toast.error("User adding is failed");
+		}
+	},
 
 	searchUser: async (username) => {
 		try {
 			const res = await axiosInstance.get("/auth/usersearch", {
 				params: { username }, // ✅ use params for GET
 			});
+			console.log(res.data, "search dasdassda form");
 			set({ searchResults: res.data }); // ✅ update search results in store
 		} catch (error) {
 			console.error("Error searching user", error);
@@ -31,6 +47,7 @@ export const useAuthStore = create((set, get) => ({
 			toast.error("User search failed");
 		}
 	},
+
 	checkAuth: async () => {
 		try {
 			const res = await axiosInstance.get("/auth/check");

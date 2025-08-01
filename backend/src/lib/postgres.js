@@ -52,6 +52,10 @@ export default pool;
 //     UNIQUE (user_id, contact_id)
 // );
 
+//create user_contacts 
+
+
+
 // -- Messages table
 // CREATE TABLE messages (
 //     id SERIAL PRIMARY KEY,

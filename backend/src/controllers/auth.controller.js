@@ -5,6 +5,30 @@ import cloudinary from "../lib/cloudinary.js";
 import pool from "../lib/postgres.js";
 
 
+export const addUser = async (req, res) => {
+
+	const { username } = req.query;
+	const myId = req.user.id;
+	try {
+		const result = await pool.query(
+			"SELECT id FROM users WHERE username = $1", 
+			[username]
+		);
+		
+		
+        const newContactID = result.rows[0]?.id;
+				if (!newContactID) {
+					return res.status(404).json({ message: "User not found" });
+				}
+		const result2 = await pool.query("insert into contacts (user_id, contact_id) values ($1,$2) returning *", [myId, newContactID]);
+		res.json({ success: true, contactId: newContactID });
+
+	} catch (error) {
+		console.log("Error in add users:", error.message);
+		res.status(500).json({ message: "problem in finding user" });
+	}
+}
+
 export const signup = async (req, res) => {
 	const { fullName, email, password, username } = req.body;
 	try {

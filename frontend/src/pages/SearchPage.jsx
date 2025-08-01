@@ -1,25 +1,36 @@
 import React, { useState,useEffect } from "react";
 import { useAuthStore } from "../store/useAuthStore";
+import { Check } from "lucide-react";
 
 const SearchPage = () => {
 	const [username, setUsername] = useState("");
-    const { searchUser, searchResults } = useAuthStore();
+    const { searchUser, searchResults, addUser,addResults} = useAuthStore();
 
 	const handleSearch = () => {
 		searchUser(username); // triggers API call and updates Zustand state
 	};
 
+    const handleAdd = () => {
+        addUser(username);
+    }
 	
 	useEffect(() => {
 		console.log("Updated search results:", searchResults);
 	}, [searchResults]);
+    	
+	useEffect(() => {
+		if (addResults?.success) {
+			console.log("New contact ID:", addResults.contactId);
+		}
+	}, [addResults]);
+    
 
-    console.log("bla bla bla", searchResults);
+    
 	return (
 		<div className="min-h-screen  pt-16 flex flex-col items-center m-5">
 			{/* Search Bar */}
-			<fieldset className="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-10 ">
-				<legend className="fieldset-legend pt-10">User Search</legend>
+			<fieldset className="fieldset bg-base-200 border-base-300 rounded-box w-xs border m-10 p-10 ">
+				<legend className="fieldset-legend mt-10 pt-10">User Search</legend>
 				<input
 					type="text"
 					value={username}
@@ -66,9 +77,19 @@ const SearchPage = () => {
 												</div>
 											</td>
 											<th>
-												<button className="btn btn-ghost btn-xs">
-													add contact
-												</button>
+												{addResults?.success ? (
+													<div className="badge badge-success gap-2 h-5">
+														<Check className="h-5 w-4" />
+														Done
+													</div>
+												) : (
+													<button
+														onClick={handleAdd}
+														className="btn btn-ghost btn-xs"
+													>
+														Add Contact
+													</button>
+												)}
 											</th>
 										</tr>
 									))}
