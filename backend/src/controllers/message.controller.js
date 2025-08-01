@@ -10,23 +10,25 @@ export const getUsersForSidebar = async (req, res) => {
 		
 		const result = await pool.query(
 			`SELECT 
-			  u.id,
-			  u.name,
-			  u.email,
-			  u.profileimage,
-			  u.username,
-			  MAX(m.created_at) AS last_message_time
-			 FROM users u
+				u.id,
+				u.name,
+				u.email,
+				u.profileimage,
+				u.username,
+				MAX(m.created_at) AS last_message_time
+			 FROM contacts c
+			 JOIN users u 
+			   ON c.contact_id = u.id   -- ✅ get user details of contacts
 			 LEFT JOIN messages m 
 			   ON (u.id = m.sender_id AND m.receiver_id = $1) 
 			   OR (u.id = m.receiver_id AND m.sender_id = $1)
-			 WHERE u.id != $1
+			 WHERE c.user_id = $1        -- ✅ only my contacts
 			 GROUP BY u.id
 			 ORDER BY last_message_time DESC NULLS LAST`,
 			[loggedInUserId]
 		);
 	  
-	  
+	
 	
 		const filteredUsers = result.rows;
 		
