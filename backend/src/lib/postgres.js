@@ -1,8 +1,8 @@
+import { config } from "dotenv";
+config();
+
 import pkg from "pg";
 const { Pool } = pkg;
-import { config } from "dotenv";
-
-config();
 
 export const pool = new Pool({
 	user: process.env.PG_NAME,
@@ -11,7 +11,6 @@ export const pool = new Pool({
 	password: process.env.PG_PASSWORD,
 	port: process.env.PG_PORT,
 });
-
 // Optional: Test the connection once
 pool
 	.connect()
@@ -24,17 +23,6 @@ pool
 	});
 
 export default pool;
-
-
-
-
-
-
-
-
-
-
-
 
 // -- Users table
 // CREATE TABLE users (
@@ -55,9 +43,7 @@ export default pool;
 //     UNIQUE (user_id, contact_id)
 // );
 
-//create user_contacts 
-
-
+//create user_contacts
 
 // -- Messages table
 // CREATE TABLE messages (
