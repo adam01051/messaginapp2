@@ -1,8 +1,9 @@
 import pkg from "pg";
 const { Pool } = pkg;
-import dotenv from "dotenv";
+import { config } from "dotenv";
 
-dotenv.config();
+config();
+
 export const pool = new Pool({
 	user: process.env.PG_NAME,
 	host: process.env.PG_HOST,
