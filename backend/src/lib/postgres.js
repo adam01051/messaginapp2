@@ -1,12 +1,14 @@
 import pkg from "pg";
 const { Pool } = pkg;
+import dotenv from "dotenv";
 
+dotenv.config();
 export const pool = new Pool({
-	user: "postgres",
-	host: "localhost",
-	database: "messaging_app",
-	password: "4909770",
-	port: 5432,
+	user: process.env.PG_NAME,
+	host: process.env.PG_HOST,
+	database: process.env.PG_DATABASE,
+	password: process.env.PG_PASSWORD,
+	port: process.env.PG_PORT,
 });
 
 // Optional: Test the connection once

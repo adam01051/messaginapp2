@@ -83,8 +83,6 @@ const Sidebar = () => {
 								{onlineUsers.includes(user.id.toString())
 									? "Online"
 									: "Offline"}
-								
-								
 							</div>
 						</div>
 					</button>
