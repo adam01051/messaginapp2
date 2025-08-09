@@ -3,7 +3,7 @@ import { generateToken } from "../lib/utils.js";
 import bcrypt from "bcryptjs";
 import cloudinary from "../lib/cloudinary.js";
 import pool from "../lib/postgres.js";
-
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 
 export const addUser = async (req, res) => {
 
@@ -92,7 +92,9 @@ export const searchUser = async (req, res) => {
 export const logingoogle = async (req, res) => {};
 
 export const signupgoogle = async (req, res) => { 
-	new GoogleStrategy(
+	
+	try {
+		const res2 = new GoogleStrategy(
 			{
 				clientID: process.env.GOOGLE_CLIENT_ID,
 				clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -102,12 +104,12 @@ export const signupgoogle = async (req, res) => {
 			async (accessToken, refreshToken, profile, cb) => {
 				try {
 					console.log(profile);
-					const result = await db.query(
-						"select * from users where username = $1",
+					const result = await pool.query(
+						"select * from users where email = $1",
 						[profile.email]
 					);
 					if (result.rows.length === 0) {
-						const newuser = await db.query(
+						const newuser = await pool.query(
 							"insert into users  (username , password) values ($1,$2)",
 							[profile.email, "google"]
 						);
@@ -119,7 +121,12 @@ export const signupgoogle = async (req, res) => {
 					cb(err);
 				}
 			}
-		)
+		);
+	} catch (error) {
+		
+	}
+	
+	
 
 	
 };

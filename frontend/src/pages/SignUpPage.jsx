@@ -14,6 +14,7 @@ import {
   MessageSquare,
   User,
 } from "lucide-react";
+
  
 const SignupPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -24,7 +25,7 @@ const SignupPage = () => {
 	username:"",
   });
 
-  const { signup, isSigningUp } = useAuthStore();
+  const { signup, isSigningUp ,signupgoogle} = useAuthStore();
 
   const validateForm = () => {
     if (!formData.fullName.trim()) return toast.error("Full name is required");
@@ -46,6 +47,13 @@ const SignupPage = () => {
 
     if (success === true) signup(formData);
   };
+		
+  const handleGoogleSubmit = async () => {
+		signupgoogle();
+	};
+
+	
+	
   return (
 		<div className="min-h-screen grid lg:grid-cols-2">
 			{/* left side */}
@@ -172,6 +180,16 @@ const SignupPage = () => {
 								"Create Account"
 							)}
 						</button>
+					</form>
+					<form onSubmit={handleGoogleSubmit}>
+						<div className="card social-block ">
+							<div className="card">
+								<a className="btn btn-block" href="/auth/google" role="button">
+									<i className="fab fa-google"></i>
+									Log in with Google
+								</a>
+							</div>
+						</div>
 					</form>
 
 					<div className="text-center">

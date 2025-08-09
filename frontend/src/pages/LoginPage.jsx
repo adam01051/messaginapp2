@@ -10,16 +10,12 @@ const LoginPage = () => {
     email: "",
     password: "",
   });
-  const { login, isLoggingIn,logingoogle } = useAuthStore();
+  const { login, isLoggingIn } = useAuthStore();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     login(formData);
   };
-	
-	const handleGoogleSubmit = async () => {
-		logingoogle();
-	};
 
   return (
 		<div className="min-h-screen grid lg:grid-cols-2 m-2">
@@ -109,16 +105,7 @@ const LoginPage = () => {
 						</button>
 					</form>
 
-					<form onSubmit={handleGoogleSubmit}>
-					<div className="card social-block ">
-						<div className="card">
-							<a className="btn btn-block" href="/auth/google" role="button">
-								<i className="fab fa-google"></i>
-								Log in with Google
-							</a>
-						</div>
-					  </div>
-					  </form>
+					
 					<div className="text-center">
 						<p className="text-base-content/60">
 							Don&apos;t have an account?{" "}
