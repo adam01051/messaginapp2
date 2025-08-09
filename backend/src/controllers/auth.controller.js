@@ -89,6 +89,46 @@ export const searchUser = async (req, res) => {
 	}
 };
 
+export const logingoogle = async (req, res) => {};
+
+export const signupgoogle = async (req, res) => { 
+	new GoogleStrategy(
+			{
+				clientID: process.env.GOOGLE_CLIENT_ID,
+				clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+				callbackURL: "http://localhost:3000/auth/google/secrets",
+				userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo",
+			},
+			async (accessToken, refreshToken, profile, cb) => {
+				try {
+					console.log(profile);
+					const result = await db.query(
+						"select * from users where username = $1",
+						[profile.email]
+					);
+					if (result.rows.length === 0) {
+						const newuser = await db.query(
+							"insert into users  (username , password) values ($1,$2)",
+							[profile.email, "google"]
+						);
+						cb(null, newuser.rows[0]);
+					} else {
+						cb(null, result.rows[0]);
+					}
+				} catch (err) {
+					cb(err);
+				}
+			}
+		)
+
+	
+};
+
+
+
+
+
+
 export const login = async (req, res) => {
 	const { email, password } = req.body;
 	try {

@@ -47,6 +47,7 @@ const App = () => {
 					path="/login"
 					element={!authUser ? <LoginPage /> : <Navigate to="/" />}
 				/>
+				
 				<Route path="/themeset" element={<ThemePage />} />
 				<Route
 					path="/profile"

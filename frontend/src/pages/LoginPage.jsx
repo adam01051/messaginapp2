@@ -10,18 +10,22 @@ const LoginPage = () => {
     email: "",
     password: "",
   });
-  const { login, isLoggingIn } = useAuthStore();
+  const { login, isLoggingIn,logingoogle } = useAuthStore();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     login(formData);
   };
+	
+	const handleGoogleSubmit = async () => {
+		logingoogle();
+	};
 
   return (
-		<div className="min-h-screen grid lg:grid-cols-2">
+		<div className="min-h-screen grid lg:grid-cols-2 m-2">
 			{/* Left Side - Form */}
 			<div className="flex flex-col justify-center items-center p-6 sm:p-12">
-				<div className="w-full max-w-md space-y-8">
+				<div className="w-full max-w-md space-y-8 m-4">
 					{/* Logo */}
 					<div className="text-center mb-8">
 						<div className="flex flex-col items-center gap-2 group">
@@ -105,6 +109,16 @@ const LoginPage = () => {
 						</button>
 					</form>
 
+					<form onSubmit={handleGoogleSubmit}>
+					<div className="card social-block ">
+						<div className="card">
+							<a className="btn btn-block" href="/auth/google" role="button">
+								<i className="fab fa-google"></i>
+								Log in with Google
+							</a>
+						</div>
+					  </div>
+					  </form>
 					<div className="text-center">
 						<p className="text-base-content/60">
 							Don&apos;t have an account?{" "}
