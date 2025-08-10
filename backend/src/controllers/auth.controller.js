@@ -47,7 +47,7 @@ export const signup = async (req, res) => {
 		const checkEmail = await pool.query("select * from users where email = $1", [
 			email,
 		]);
-
+/* */
 		if (checkEmail.rows.length > 0)
 			return res.status(400).json({ message: "Email already exists" });
 
