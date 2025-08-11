@@ -185,11 +185,12 @@ const SignupPage = () => {
 						</button>
 					</form>
 					<form onSubmit={handleGoogleSubmit}>
-						<button type="submit" className="btn  w-full">
-							
-								Log in with Google
-						
-					
+						<button
+							type="button"
+							onClick={handleGoogleSubmit}
+							className="btn w-full"
+						>
+							Sign up with Google
 						</button>
 					</form>
 

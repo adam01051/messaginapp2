@@ -4,8 +4,10 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import pool from "./lib/postgres.js";
 import path from "path";
+import passport from "passport";
+import session from "express-session";
 
-
+ 
 
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
@@ -40,6 +42,20 @@ app.use(
 		credentials: true,
 	})
 );
+// **ADD session middleware here**
+app.use(
+	session({
+	  secret: process.env.SESSION_SECRET || "your-secret-key", // put secret in .env
+	  resave: false,
+	  saveUninitialized: false,
+	  cookie: { secure: false }, // set to true if using HTTPS
+	})
+  );
+  
+  // **INITIALIZE passport and passport session**
+  app.use(passport.initialize());
+  app.use(passport.session());
+
 
 
 app.use("/api/auth", authRoutes);

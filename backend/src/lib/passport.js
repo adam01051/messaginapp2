@@ -1,6 +1,7 @@
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import passport from "passport";
 import { config } from "dotenv";
+import pool from "./postgres.js";
 config();
 
 
@@ -12,13 +13,37 @@ passport.use(
 			callbackURL: "http://localhost:5001/api/auth/google/callback",
 			passReqToCallback: true,
 		},
-        function (request, accessToken, refreshToken, profile, done) {
-            
-			console.log(profile);
-			return done(err, user);
-		}
-	)
+        async (req,accessToken, refreshToken, profile, done) => {
+            try {
+                const email = profile.emails[0].value;
+                let result = await pool.query(
+                    "SELECT * FROM users WHERE email = $1",
+                    [email]
+                );
+
+                if (result.rows.length === 0) {
+                     result = await pool.query(
+												`INSERT INTO users (name, email, username, password_, profileimage) 
+                         VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+												[
+													profile.name.givenName,
+													email,
+													profile.displayName.split(" ").join(""),
+													"google",
+													profile.photos[0].value,
+												]
+											);
+                }
+              
+                return done(null, result.rows[0]);
+            } catch (err) {
+                return done(err);
+            }
+        }
+    )
 );
+	
+
 
 
 
