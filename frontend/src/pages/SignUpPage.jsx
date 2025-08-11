@@ -14,7 +14,7 @@ import {
   MessageSquare,
   User,
 } from "lucide-react";
-import { signupgoogle } from "../../../backend/src/controllers/auth.controller";
+
 
  
 const SignupPage = () => {
@@ -49,9 +49,10 @@ const SignupPage = () => {
     if (success === true) signup(formData);
   };
 		
-	const handleGoogleSubmit = async (e) => {
-		e.preventDefault();
-		signupgoogle();
+	const handleGoogleSubmit = async () => {
+		
+		window.location.href = "http://localhost:5001/api/auth/google";
+		
 	};
 
 	
@@ -185,7 +186,10 @@ const SignupPage = () => {
 					</form>
 					<form onSubmit={handleGoogleSubmit}>
 						<button type="submit" className="btn  w-full">
-							<a href="/googler">Log in with Google</a>
+							
+								Log in with Google
+						
+					
 						</button>
 					</form>
 

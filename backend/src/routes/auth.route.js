@@ -1,17 +1,26 @@
 import express from "express";
-import { signup, login, logout,updateProfile, checkAuth, searchUser,addUser,signupgoogle} from "../controllers/auth.controller.js";
+import { signup, login, logout,updateProfile, checkAuth, searchUser,addUser} from "../controllers/auth.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
-import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import passport from "passport"; 
+import pass from "../lib/passport.js";
 const router = express.Router();
 
 router.post("/signup", signup);
 
 
+router.get(
+	"/google",
+	passport.authenticate("google", { scope: ["email", "profile"] })
+); 
 
+router.get(
+	"/google/callback",
+	passport.authenticate("google", {
+		successRedirect: "/auth/google/success",
+		failureRedirect: "/auth/google/failure",
+	})
+);
 
-
-router.get("googler/",passport.authenticate("google",{scope:["profile","email"]}))
 
 
 router.post("/login", login);

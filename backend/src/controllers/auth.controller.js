@@ -3,54 +3,10 @@ import { generateToken } from "../lib/utils.js";
 import bcrypt from "bcryptjs";
 import cloudinary from "../lib/cloudinary.js";
 import pool from "../lib/postgres.js";
-import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import passport from "passport";
 
-export const signupgoogle = (req, res, next) => {
-	try {
-		passport.use(
-			"google",
-			new GoogleStrategy(
-				{
-					clientID: process.env.CLIENT_ID,
-					clientSecret: process.env.CLIENT_SECRET,
-					callbackURL: "http://localhost:5001/auth/google/messaginapp1",
-					userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo",
-				},
-				async (accessToken, refreshToken, profile, cb) => {
-					try {
-						const email = profile.emails[0].value;
-						let result = await pool.query(
-							"SELECT * FROM users WHERE email = $1",
-							[email]
-						);
 
-						if (result.rows.length === 0) {
-							result = await pool.query(
-								"INSERT INTO users (name, email, username, password_) VALUES ($1, $2, $3, $4) RETURNING *",
-								[profile.displayName, email, profile.displayName, "google"]
-							);
-						}
-						passport.authenticate("google", { scope: ["profile", "email"] });
 
-						return cb(null, result.rows[0]);
-					} catch (err) {
-						return cb(err);
-					}
-				}
-			)
-		);
-		passport.serializeUser((user, done) => {
-			done(null, user);
-		});
-		passport.deserializeUser((obj, done) => {
-			done(null, obj);
-		});
-	} catch (error) {
-		console.log("Error in signupgoogle:", error);
-		res.status(500).json({ message: "Internal Server Error" });
-	}
-};
+
 
 
 
