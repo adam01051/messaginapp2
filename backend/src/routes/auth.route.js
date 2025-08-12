@@ -26,7 +26,7 @@ router.get(
 		generateToken(user.id, res);
 
 		// Redirect or respond as you wish
-        res.redirect("http://localhost:5173");  // or send JSON with token etc.
+		 res.redirect("http://localhost:5173");  // or send JSON with token etc.
 	}
 );
 
