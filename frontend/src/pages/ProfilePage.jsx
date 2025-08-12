@@ -9,6 +9,15 @@ const ProfilePage = () => {
 	const { authUser, isUpdatingProfile, updateProfile } = useAuthStore();
 	const [selectedImg, setSelectedImg] = useState(null);
 
+	const [prototype1, setPrototype1] = useState({
+		id: authUser.id,
+		name: authUser.name,
+		username: authUser.username,
+		password_: authUser.password_,
+		profileimage: authUser.profileimage,
+		email: authUser.email,
+		number:authUser.number
+	})
 
 	
 	const handleImageUpload = async (e) => {
@@ -80,18 +89,28 @@ const ProfilePage = () => {
 								<User className="w-4 h-6" />
 								Full Name
 							</div>
-							<p className="px-4 py-2.5 bg-base-200 rounded-lg border">
-								{authUser?.name}
-							</p>
+							<input
+								type="text"
+								className={`input input-bordered w-full bg-base-200 rounded-lg border`}
+								value={prototype1?.name}
+								onChange={(e) =>
+									setPrototype1({ ...prototype1, name: e.target.value })
+								}
+							/>
 						</div>
 						<div className="space-y-1.5">
 							<div className="text-sm text-zinc-400 flex items-center gap-2">
 								<User className="w-4 h-4" />
 								Username
 							</div>
-							<p className="px-4 py-2.5 bg-base-200 rounded-lg border">
-								{authUser?.username}
-							</p>
+							<input
+								type="text"
+								className={`input input-bordered w-full bg-base-200 rounded-lg border`}
+								value={prototype1?.username}
+								onChange={(e) =>
+									setPrototype1({ ...prototype1, username: e.target.value })
+								}
+							/>
 						</div>
 
 						<div className="space-y-1.5">
@@ -99,18 +118,35 @@ const ProfilePage = () => {
 								<Mail className="w-4 h-4" />
 								Email Address
 							</div>
-							<p className="px-4 py-2.5 bg-base-200 rounded-lg border">
-								{authUser?.email}
-							</p>
+							<input
+								type="email"
+								className={`input input-bordered w-full bg-base-200 rounded-lg border`}
+								value={prototype1?.email}
+								onChange={(e) =>
+									setPrototype1({ ...prototype1, email: e.target.value })
+								}
+							/>
 						</div>
 						<div className="space-y-1.5">
 							<div className="text-sm text-zinc-400 flex items-center gap-2">
 								<User className="w-4 h-4" />
 								Phone Number
 							</div>
-							<p  className="px-4 py-2.5 bg-base-200 rounded-lg border" >
-								{authUser?.number || "You can add phone number"}
-							</p>
+							<input
+								type="tel"
+								placeholder="Add phone number"
+								className={`input input-bordered w-full bg-base-200 rounded-lg border`}
+								value={prototype1?.number}
+								onChange={(e) =>
+									setPrototype1({ ...prototype1, number: e.target.value })
+								}
+							/>
+						</div>
+
+						<div className="h-30 w-full">
+							<button className="btn btn-success  ">
+								Success
+							</button>
 						</div>
 					</div>
 
