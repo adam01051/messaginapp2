@@ -25,8 +25,8 @@ app.use(express.json({ limit: "50mb" }));
 app.use(cookieParser());
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 const allowedOrigins = [
-	"http://localhost:5173",
-	"https://app1-zaix.onrender.com/api", // ✅ replace with actual frontend URL
+	process.env.LOCAL_URL,
+	process.env.NOT_LOCAL_URL, // ✅ replace with actual frontend URL
 ];
 
 app.use(
@@ -38,7 +38,7 @@ app.use(
 
 app.use(
 	cors({
-		origin: "http://localhost:5173",
+		origin: process.env.LOCAL_URL,
 		credentials: true,
 	})
 );

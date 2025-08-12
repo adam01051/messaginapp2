@@ -8,10 +8,26 @@ import express from "express";
 
 
 
+export const initGoogleAuth = passport.authenticate("google", {
+	scope: ["email", "profile"],
+	session: false,
+});
 
+// Google Callback Handler
+export const googleAuthCallback = (req, res, next) => {
+	passport.authenticate("google", { session: false }, (err, user, info) => {
+		if (err || !user) {
+			console.error(
+				"Authentication error:",
+				err || info?.message || "No user found"
+			);
+			return res.redirect("http://localhost:5173?error=auth_failed");
+		}
 
-
-
+		generateToken(user.id, res); // Sets JWT cookie
+		res.redirect("http://localhost:5173");
+	})(req, res, next);
+};
 
 export const addUser = async (req, res) => {
 
