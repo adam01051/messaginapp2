@@ -126,7 +126,7 @@ export const login = async (req, res) => {
 		);
 
 		const user = userDetails.rows[0];
-	
+		console.log(user);
 		
 		if (!user) {
 			console.log("working login email check");
