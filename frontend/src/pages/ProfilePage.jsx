@@ -6,7 +6,7 @@ import { Camera, Mail, User } from "lucide-react";
 
 
 const ProfilePage = () => {
-	const { authUser, isUpdatingProfile, updateProfile } = useAuthStore();
+	const { authUser, isUpdatingProfile, updateProfile,editProfileData } = useAuthStore();
 	const [selectedImg, setSelectedImg] = useState(null);
 
 	const [prototype1, setPrototype1] = useState({
@@ -19,6 +19,10 @@ const ProfilePage = () => {
 		number:authUser.number
 	})
 
+	const handleProfileData = async () => {
+
+		await editProfileData(prototype1);
+	};
 	
 	const handleImageUpload = async (e) => {
 		const file = e.target.files[0];
@@ -144,8 +148,8 @@ const ProfilePage = () => {
 						</div>
 
 						<div className="h-30 w-full">
-							<button className="btn btn-success  ">
-								Success
+							<button onClick={handleProfileData} className="btn btn-success  ">
+								Save
 							</button>
 						</div>
 					</div>

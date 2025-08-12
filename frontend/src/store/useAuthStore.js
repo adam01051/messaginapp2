@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 
 
+
 const BASE_URL =
 	import.meta.env.MODE === "development"
 		? "http://localhost:5001"
@@ -66,7 +67,6 @@ export const useAuthStore = create((set, get) => ({
 	signup: async (data) => {
 		set({ isSigningUp: true });
 		try {
-			
 			const res = await axiosInstance.post("/auth/signup", data);
 			set({ authUser: res.data });
 			console.log(res.data);
@@ -116,6 +116,17 @@ export const useAuthStore = create((set, get) => ({
 			toast.error(error.response.data.message);
 		} finally {
 			set({ isUpdatingProfile: false });
+		}
+	},
+	editProfileData: async (data) => {
+		try {
+			const res = await axiosInstance.put("/auth/edit-profile", { data },
+			);
+			set({ authUser: res.data });
+			toast.success("Profile data successfully edited");
+		} catch (error) {
+			console.error("Error in editing profile", error);
+			toast.error("Profile editing is failed");
 		}
 	},
 

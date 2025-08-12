@@ -29,6 +29,10 @@ export const googleAuthCallback = (req, res, next) => {
 	})(req, res, next);
 };
 
+
+
+
+
 export const addUser = async (req, res) => {
 
 	const { username } = req.query;
@@ -191,6 +195,29 @@ export const updateProfile = async (req, res) => {
 		res.status(500).json({ message: "Internal server error" });
 	}
 };
+
+export const editProfileData = async (req, res) => {
+
+
+	try {
+		const { data } = req.body;
+		const userId = req.user.id;
+
+		console.log(data);
+		console.log(userId, " this is place");
+
+		if (!data) {
+			return res.status(400).json({ message: "no data" });
+		}
+	} catch (error) {
+		console.log("error in update profile:", error);
+		res.status(500).json({ message: "Internal server error" });
+	}
+};
+
+
+
+
 
 export const checkAuth = (req, res) => {
 	try {
