@@ -7,8 +7,8 @@ import { useAuthStore } from "./useAuthStore";
 
 export const useChatStore = create((set, get) => ({
 	messages: [],
-	users: [], 
-	onlineUsers: {}, 
+	users: [],
+	onlineUsers: {},
 	selectedUser: null,
 	isUsersLoading: false,
 	isMessagesLoading: false,
@@ -75,18 +75,25 @@ export const useChatStore = create((set, get) => ({
 							state.selectedUser,
 						...state.users.filter((u) => u.id !== newMessage.sender_id),
 					],
-					isNewMessage:newMessage.receiver_id
-				
+					isNewMessage: newMessage.receiver_id,
 				};
 			});
 		});
 	},
+	
 	unsubscribeFromMessages: () => {
-		set({ selectedUser: null });
 		const socket = useAuthStore.getState().socket;
 		socket.off("newMessage");
 	},
-
+	
+	closeChat: () => {
+		set({ selectedUser: null });
+	},
 	//todo: optimize this one later
-	setSelectedUser: (selectedUser) => set({ selectedUser }),
+	setSelectedUser: (user) => {
+		const { selectedUser } = get();
+		// If same user, do nothing
+		if (selectedUser?.id === user.id) return;
+		set({ selectedUser: user });
+	},
 }));

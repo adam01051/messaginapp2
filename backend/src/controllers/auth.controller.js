@@ -30,9 +30,6 @@ export const googleAuthCallback = (req, res, next) => {
 };
 
 
-
-
-
 export const addUser = async (req, res) => {
 
 	const { username } = req.query;
