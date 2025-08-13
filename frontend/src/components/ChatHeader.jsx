@@ -43,8 +43,10 @@ const ChatHeader = () => {
 
 								{/* User info */}
 								<div>
-									<h3 className="font-medium">{selectedUser?.name}</h3>
-									<p className="text-sm text-base-content/70">
+									<h3 className="font-medium flex justify-start ">
+										{selectedUser?.name}
+									</h3>
+									<p className="text-sm text-base-content/70 flex justify-start">
 										{onlineUsers.includes(selectedUser?.id?.toString())
 											? "Online"
 											: "Offline"}
@@ -64,8 +66,15 @@ const ChatHeader = () => {
 			<div className="modal" role="dialog">
 				<div className="modal-box h-5/6 w-full ">
 					{/* Modal */}
+
 					<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
 						<div className="bg-base-100 rounded-xl p-3 space-y-4 max-w-md w-full relative">
+							<label
+								htmlFor="my_modal_7"
+								className="btn btn-sm btn-circle absolute right-2 top-2"
+							>
+								✕
+							</label>
 							<div className="text-center">
 								<h1 className="text-xl font-semibold">Profile</h1>
 								<p className="mt-1">

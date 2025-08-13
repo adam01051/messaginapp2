@@ -9,7 +9,7 @@ const ProfilePage = () => {
 	const { authUser, isUpdatingProfile, updateProfile,editProfileData } = useAuthStore();
 	const [selectedImg, setSelectedImg] = useState(null);
 
-	console.log(authUser);
+
 	const [prototype1, setPrototype1] = useState({
 		id: authUser.id,
 		name: authUser.name,
