@@ -83,8 +83,8 @@ export const signup = async (req, res) => {
 		const hashedPassword = await bcrypt.hash(password, salt);
 
 		const result = await pool.query(
-			"insert into users (name, email,username, password_) values ($1, $2, $3, $4) RETURNING id, name AS fullName, email,username",
-			[fullName, email, username, hashedPassword]
+			"insert into users (name, email,username, password_, nummber) values ($1, $2, $3, $4,$5) RETURNING id, name AS fullName, email,username",
+			[fullName, email, username, hashedPassword,null]
 		);
 		const newUser = result.rows[0];
 	
@@ -130,7 +130,7 @@ export const login = async (req, res) => {
 		);
 
 		const user = userDetails.rows[0];
-		console.log(user);
+
 		
 		if (!user) {
 			console.log("working login email check");
@@ -151,7 +151,7 @@ export const login = async (req, res) => {
 			email: user.email,
 			profilePic: user.profileimage,
 			username: user.username,
-			
+			number: user.number,
 		}); 
 	} catch (error) {
 		console.log("Error in login controller", error.message);
@@ -200,15 +200,24 @@ export const editProfileData = async (req, res) => {
 
 
 	try {
-		const { data } = req.body;
+		const { name, username, number } = req.body;
 		const userId = req.user.id;
 
-		console.log(data);
-		console.log(userId, " this is place");
-
-		if (!data) {
-			return res.status(400).json({ message: "no data" });
+		if (!name || !username || !number) {
+			return res.status(400).json({ message: "Missing required fields" });
 		}
+
+		const result = await pool.query(
+			`UPDATE users
+			 SET name = $1, username = $2, number = $3
+			 WHERE id = $4
+			 RETURNING *`,
+			[name, username, number, userId]
+		);//finished  for now
+
+		res.status(200).json(result.rows[0]);
+
+
 	} catch (error) {
 		console.log("error in update profile:", error);
 		res.status(500).json({ message: "Internal server error" });

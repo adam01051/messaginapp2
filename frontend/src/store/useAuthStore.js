@@ -118,15 +118,15 @@ export const useAuthStore = create((set, get) => ({
 			set({ isUpdatingProfile: false });
 		}
 	},
+	
 	editProfileData: async (data) => {
 		try {
-			const res = await axiosInstance.put("/auth/edit-profile", { data },
-			);
+			const res = await axiosInstance.put("/auth/edit-profile", data);
 			set({ authUser: res.data });
-			toast.success("Profile data successfully edited");
+			toast.success("Profile updated successfully");
 		} catch (error) {
 			console.error("Error in editing profile", error);
-			toast.error("Profile editing is failed");
+			toast.error("Profile update failed");
 		}
 	},
 

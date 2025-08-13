@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
-import { Camera, Mail, User } from "lucide-react";
+import { Camera, Mail, User, Contact} from "lucide-react";
 
 // starting again
 
@@ -9,19 +9,18 @@ const ProfilePage = () => {
 	const { authUser, isUpdatingProfile, updateProfile,editProfileData } = useAuthStore();
 	const [selectedImg, setSelectedImg] = useState(null);
 
+	console.log(authUser);
 	const [prototype1, setPrototype1] = useState({
 		id: authUser.id,
 		name: authUser.name,
 		username: authUser.username,
-		password_: authUser.password_,
-		profileimage: authUser.profileimage,
-		email: authUser.email,
 		number:authUser.number
 	})
 
 	const handleProfileData = async () => {
 
 		await editProfileData(prototype1);
+	
 	};
 	
 	const handleImageUpload = async (e) => {
@@ -122,25 +121,20 @@ const ProfilePage = () => {
 								<Mail className="w-4 h-4" />
 								Email Address
 							</div>
-							<input
-								type="email"
-								className={`input input-bordered w-full bg-base-200 rounded-lg border`}
-								value={prototype1?.email}
-								onChange={(e) =>
-									setPrototype1({ ...prototype1, email: e.target.value })
-								}
-							/>
+							<p className="px-4 py-2.5 bg-base-200 rounded-lg border">
+								{authUser?.email}
+							</p>
 						</div>
 						<div className="space-y-1.5">
 							<div className="text-sm text-zinc-400 flex items-center gap-2">
-								<User className="w-4 h-4" />
+								<Contact className="w-4 h-4" />
 								Phone Number
 							</div>
+							
 							<input
 								type="tel"
-								placeholder="Add phone number"
-								className={`input input-bordered w-full bg-base-200 rounded-lg border`}
 								value={prototype1?.number}
+								className={`input input-bordered w-full bg-base-200 rounded-lg border`}
 								onChange={(e) =>
 									setPrototype1({ ...prototype1, number: e.target.value })
 								}
