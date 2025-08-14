@@ -1,9 +1,11 @@
 import React from "react";
 import { Link,useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
+import { useChatStore } from "../store/useChatStore";
 import { LogOut, MessageSquare, Settings, User, Search } from "lucide-react";
 const Navbar = () => {
 	const { logout, authUser } = useAuthStore();
+	const { closeChat } = useChatStore();
 	const navigate = useNavigate();
 	return (
 		<header
@@ -12,7 +14,7 @@ const Navbar = () => {
 		>
 			<div className="container mx-auto px-4 h-16">
 				<div className="flex items-center justify-between h-full">
-					<div className="flex items-center gap-8">
+					<div className="flex items-center gap-8" onClick={closeChat}>
 						<Link
 							to="/"
 							className="flex items-center gap-2.5 hover:opacity-80 transition-all"

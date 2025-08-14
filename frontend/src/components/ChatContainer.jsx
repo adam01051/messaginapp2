@@ -6,8 +6,11 @@ import MessageInput from "./MessageInput";
 import MessageSkeleton from "./skeletons/MessageSkeleton";
 import { useAuthStore } from "../store/useAuthStore";
 import { formatMessageTime } from "../lib/utils";
+import Lightbox from 'react-image-lightbox';
+import 'react-image-lightbox/style.css'; 
 
 const ChatContainer = () => {
+
 	const {
 		messages,
 		getMessages,
@@ -15,8 +18,29 @@ const ChatContainer = () => {
 		selectedUser,
 		subscribeToMessages,
 		unsubscribeFromMessages,
+		closeChat,
 		
 	} = useChatStore();
+
+
+	useEffect(() => {
+		const handleEsc = (e) => {
+			const modalCheckbox = document.getElementById("my_modal_7");
+			if (e.key !== "Escape") return;
+
+			if (modalCheckbox && modalCheckbox.checked) {
+				// If modal is open, close it
+				modalCheckbox.checked = false;
+			} else {
+				// Otherwise, close chat container
+				closeChat();
+			}
+
+
+		};
+		document.addEventListener("keydown", handleEsc);
+		return () => document.removeEventListener("keydown", handleEsc);
+	}, [closeChat]);
 
 
 	const { authUser } = useAuthStore();
@@ -35,6 +59,7 @@ const ChatContainer = () => {
 		unsubscribeFromMessages,
 	]);
 
+	
 	useEffect(() => {
 		if (messageEndRef.current && messages) {
 			messageEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -43,7 +68,7 @@ const ChatContainer = () => {
 
 	if (!authUser || isMessagesLoading) {
 		return (
-			<div className="flex-1 flex flex-col overflow-auto">
+			<div id="chat" className="  flex-1 flex flex-col overflow-auto">
 				<ChatHeader />
 				<MessageSkeleton />
 				<MessageInput />

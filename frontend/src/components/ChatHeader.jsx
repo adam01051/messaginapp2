@@ -5,20 +5,13 @@ import { useChatStore } from "../store/useChatStore";
 
 
 const ChatHeader = () => {
-	const { selectedUser, closeChat } = useChatStore();
+	const { selectedUser } = useChatStore();
 	const { onlineUsers } = useAuthStore();
-	//const [isModalOpen, setIsModalOpen] = useState(false);
-	/*
-	const handleContactProfile = (e) => {
-		e.preventDefault();
-		setIsModalOpen(true); // open modal
-	};
 
-	const handleCloseModal = () => {
-
-		setIsModalOpen(false); // close modal
-	};
-*/
+	function closeModal() {
+		document.getElementById("my_modal_7").checked = false;
+		
+	}
 	return (
 		<>
 			{/* Header */}
@@ -27,7 +20,7 @@ const ChatHeader = () => {
 				<div className="flex items-center justify-between">
 					<label
 						htmlFor="my_modal_7"
-						className="btn bg-transparent  hover:bg-transparent  border-hidden "
+						className="btn bg-transparent  hover:bg-transparent  border-hidden border-opacity-0 rounded-none border-0 shadow-none"
 					>
 						<div className="cursor-pointer">
 							<div className="flex items-center gap-3">
@@ -56,13 +49,13 @@ const ChatHeader = () => {
 						</div>
 					</label>
 					{/* Close button */}
-					<button onClick={closeChat}>
+					<button onClick={closeModal}>
 						<X />
 					</button>
 				</div>
 			</div>
 
-			<input type="checkbox" id="my_modal_7" className="modal-toggle" />
+			<input type="checkbox" id="my_modal_7" className="modal-toggle " />
 			<div className="modal" role="dialog">
 				<div className="modal-box h-5/6 w-full ">
 					{/* Modal */}
