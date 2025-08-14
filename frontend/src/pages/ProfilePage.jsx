@@ -95,7 +95,7 @@ const ProfilePage = () => {
 							<input
 								type="text"
 								className={`input input-bordered w-full bg-base-200 rounded-lg border`}
-								value={prototype1?.name}
+								value={prototype1?.name ?? ""}
 								onChange={(e) =>
 									setPrototype1({ ...prototype1, name: e.target.value })
 								}
@@ -109,7 +109,7 @@ const ProfilePage = () => {
 							<input
 								type="text"
 								className={`input input-bordered w-full bg-base-200 rounded-lg border`}
-								value={prototype1?.username}
+								value={prototype1?.username ?? ""}
 								onChange={(e) =>
 									setPrototype1({ ...prototype1, username: e.target.value })
 								}
@@ -122,7 +122,7 @@ const ProfilePage = () => {
 								Email Address
 							</div>
 							<p className="px-4 py-2.5 bg-base-200 rounded-lg border">
-								{authUser?.email}
+								{authUser?.email ?? ""}
 							</p>
 						</div>
 						<div className="space-y-1.5">
@@ -130,10 +130,10 @@ const ProfilePage = () => {
 								<Contact className="w-4 h-4" />
 								Phone Number
 							</div>
-							
+
 							<input
 								type="tel"
-								value={prototype1?.number}
+								value={prototype1?.number ?? ""}
 								className={`input input-bordered w-full bg-base-200 rounded-lg border`}
 								onChange={(e) =>
 									setPrototype1({ ...prototype1, number: e.target.value })

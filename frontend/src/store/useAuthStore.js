@@ -9,7 +9,7 @@ const BASE_URL =
 	import.meta.env.MODE === "development"
 		? "http://localhost:5001"
 		: "https://app1-zaix.onrender.com";
-
+	
 export const useAuthStore = create((set, get) => ({
 	authUser: null,
 	isSigningUp: false,
@@ -20,6 +20,7 @@ export const useAuthStore = create((set, get) => ({
 	socket: null,
 	searchResults: null,
 	addResults: null,
+
 
 	addUser: async (username) => {
 		try {
@@ -98,8 +99,10 @@ export const useAuthStore = create((set, get) => ({
 		try {
 			await axiosInstance.post("/auth/logout");
 			set({ authUser: null });
+			
 			toast.success("Logged out successfully");
 			get().disconnectSocket();
+
 		} catch (error) {
 			toast.error(error.response.data.message);
 		}
@@ -149,5 +152,6 @@ export const useAuthStore = create((set, get) => ({
 	},
 	disconnectSocket: () => {
 		if (get().socket?.connected) get().socket.disconnect();
+
 	},
 }));

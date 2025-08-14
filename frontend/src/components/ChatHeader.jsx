@@ -101,7 +101,7 @@ const ChatHeader = () => {
 										Full Name
 									</div>
 									<p className=" text-md px-4 py-1.5 bg-base-200 rounded-lg border">
-										{selectedUser?.name}
+										{selectedUser?.name ?? ""}
 									</p>
 								</div>
 								<div className="space-y-1.5">
@@ -110,7 +110,7 @@ const ChatHeader = () => {
 										Username
 									</div>
 									<p className=" text-md px-4 py-1.5 bg-base-200 rounded-lg border">
-										{selectedUser?.username}
+										{selectedUser?.username ?? ""}
 									</p>
 								</div>
 
@@ -120,7 +120,7 @@ const ChatHeader = () => {
 										Email Address
 									</div>
 									<p className=" text-md px-4 py-1.5 bg-base-200 rounded-lg border">
-										{selectedUser?.email}
+										{selectedUser?.email ?? ""}
 									</p>
 								</div>
 								<div className="space-y-1.5">

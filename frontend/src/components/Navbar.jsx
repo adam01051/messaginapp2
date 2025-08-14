@@ -1,10 +1,10 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link,useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
 import { LogOut, MessageSquare, Settings, User, Search } from "lucide-react";
 const Navbar = () => {
 	const { logout, authUser } = useAuthStore();
-
+	const navigate = useNavigate();
 	return (
 		<header
 			className="bg-base-100 border-b border-base-300 fixed w-full top-0 z-40 
@@ -53,8 +53,15 @@ const Navbar = () => {
 									<span className="hidden sm:inline">Profile</span>
 								</Link>
 
-								<button className="flex gap-2 items-center" onClick={logout}>
+								<button
+									className="flex gap-2 items-center"
+									onClick={() => {
+										logout();
+										navigate("/login");
+									}}
+								>
 									<LogOut className="size-5" />
+
 									<span className="hidden sm:inline">Logout</span>
 								</button>
 							</>
