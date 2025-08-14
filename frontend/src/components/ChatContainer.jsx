@@ -6,8 +6,11 @@ import MessageInput from "./MessageInput";
 import MessageSkeleton from "./skeletons/MessageSkeleton";
 import { useAuthStore } from "../store/useAuthStore";
 import { formatMessageTime } from "../lib/utils";
-import Lightbox from 'react-image-lightbox';
-import 'react-image-lightbox/style.css'; 
+
+
+import Zoom from "react-medium-image-zoom";
+import "react-medium-image-zoom/dist/styles.css";
+
 
 const ChatContainer = () => {
 
@@ -82,11 +85,12 @@ const ChatContainer = () => {
 
 			<div className="flex-1 overflow-y-auto p-4 space-y-4">
 				{messages.map((message) => (
-					
 					<div
 						key={message.id}
 						className={`chat ${
-							String(message.sender_id) === String(authUser.id) ? "chat-end" : "chat-start"
+							String(message.sender_id) === String(authUser.id)
+								? "chat-end"
+								: "chat-start"
 						}`}
 						ref={messageEndRef}
 					>
@@ -108,13 +112,14 @@ const ChatContainer = () => {
 							</time>
 						</div>
 						<div className="chat-bubble flex flex-col">
-							
-							{message.image && (
-								<img
-									src={message.image}
-									alt="Attachment"
-									className="sm:max-w-[200px] rounded-md mb-2"
-								/>
+							{  message.image && (
+								<Zoom>
+									<img
+										src={message.image}
+										alt="Attachment"
+										className="sm:max-w-[200px] rounded-md mb-2"
+									/>
+								</Zoom>
 							)}
 							{message.content && <p>{message.content}</p>}
 						</div>

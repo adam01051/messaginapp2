@@ -19,7 +19,8 @@ passport.use(
                 let result = await pool.query(
                     "SELECT * FROM users WHERE email = $1",
                     [email]
-                );
+				);
+				const tempProfileImage = profile.photos[0]?.value || "/avatar.png";
 
                 if (result.rows.length === 0) {
                      result = await pool.query(
@@ -30,7 +31,7 @@ passport.use(
 													email,
 													profile.displayName.split(" ").join(""),
 													"google",
-													profile.photos[0].value,
+													tempProfileImage,
 												]
 											);
                 }

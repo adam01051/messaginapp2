@@ -2,6 +2,8 @@ import { X, User, Mail,Contact } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
 
+import Zoom from "react-medium-image-zoom";
+import "react-medium-image-zoom/dist/styles.css";
 
 
 const ChatHeader = () => {
@@ -78,11 +80,13 @@ const ChatHeader = () => {
 							{/* Avatar */}
 							<div className="flex flex-col items-center justify-center gap-2 w-24 h-24 mx-auto">
 								<div className="relative">
-									<img
-										src={selectedUser?.profileimage || "/avatar.png"}
-										alt="Profile"
-										className="w-24 h-24 rounded-full object-cover border-2"
-									/>
+									<Zoom>
+										<img
+											src={selectedUser?.profileimage || "/avatar.png"}
+											alt="Profile"
+											className="w-24 h-24 rounded-full object-cover border-2"
+										/>
+									</Zoom>
 								</div>
 							</div>
 
