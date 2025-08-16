@@ -6,13 +6,17 @@ import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
 
 
+
 const ChatHeader = () => {
 	const { selectedUser } = useChatStore();
 	const { onlineUsers } = useAuthStore();
 
+	
+
 	function closeModal() {
 		document.getElementById("my_modal_7").checked = false;
-		
+
+
 	}
 	return (
 		<>

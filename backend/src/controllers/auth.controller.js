@@ -146,10 +146,10 @@ export const login = async (req, res) => {
 			id: user.id,
 			fullName: user.name,
 			email: user.email,
-			profilePic: user.profileimage,
 			username: user.username,
 			number: user.number,
 		}); 
+		
 	} catch (error) {
 		console.log("Error in login controller", error.message);
 		res.status(500).json({ message: "Internal Server Error" });
@@ -181,18 +181,50 @@ export const updateProfile = async (req, res) => {
 
 		const uploadResponse = await cloudinary.uploader.upload(profilePic);
 
-		const updatedUser = await pool.query(
+		/*const updatedUser = await pool.query(
 			`UPDATE users SET profileimage = $1 WHERE id = $2 RETURNING id, name AS fullName, email, username, profileimage`,
 			[uploadResponse.secure_url, userId]
-		);
+		);*/ //will change into adding  profile picture on the seperte table so that user can have multiple profile pics
 		
+		 await pool.query(
+			"insert into profile_pics (profile_url,user_ref) values ($1,$2) ",
+			[uploadResponse.secure_url,userId]
+		);
+		const allPics = await pool.query(
+			`SELECT profile_id, profile_url FROM profile_pics WHERE user_ref = $1  ORDER BY profile_id DESC`,
+			[userId]
+		);
+
 	
-		res.status(200).json(updatedUser.rows[0]);
+		res.status(200).json(allPics.rows);
 	} catch (error) {
 		console.log("error in update profile:", error);
 		res.status(500).json({ message: "Internal server error" });
 	}
 };
+
+
+
+export const getImages = async (req, res) => {
+
+	try {
+		const userId = req.user.id;
+	
+
+		const allPics = await pool.query(
+			`SELECT profile_id, profile_url FROM profile_pics WHERE user_ref = $1  ORDER BY profile_id DESC`,
+			[userId]
+		);
+		res.status(200).json(allPics.rows);
+
+
+} catch (error) {
+	console.log("error in getting images:", error);
+	res.status(500).json({ message: "Internal server error" });
+}
+
+ }
+
 
 export const editProfileData = async (req, res) => {
 

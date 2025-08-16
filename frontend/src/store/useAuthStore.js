@@ -20,7 +20,7 @@ export const useAuthStore = create((set, get) => ({
 	socket: null,
 	searchResults: null,
 	addResults: null,
-
+	profilePics: null,
 
 	addUser: async (username) => {
 		try {
@@ -29,6 +29,7 @@ export const useAuthStore = create((set, get) => ({
 			});
 			set({ addResults: res.data });
 			toast.success("Contact successfully added");
+			
 		} catch (error) {
 			console.error("Error in adding user", error);
 			set({ addResults: [] });
@@ -70,9 +71,11 @@ export const useAuthStore = create((set, get) => ({
 		try {
 			const res = await axiosInstance.post("/auth/signup", data);
 			set({ authUser: res.data });
-			console.log(res.data);
+			
+
 			toast.success("Account created successfully");
 			get().connectSocket();
+
 		} catch (error) {
 			toast.error(error.response.data.message);
 		} finally {
@@ -85,6 +88,12 @@ export const useAuthStore = create((set, get) => ({
 		try {
 			const res = await axiosInstance.post("/auth/login", data);
 			set({ authUser: res.data });
+
+			//getimmages(res.data.id)
+			const picsRes = await axiosInstance.get("/auth/images");
+			set({ profilePics: picsRes.data }); 
+			//seperated because it cannot hold multiple  pics
+
 			toast.success("Logged in successfully");
 
 			get().connectSocket();
@@ -99,10 +108,10 @@ export const useAuthStore = create((set, get) => ({
 		try {
 			await axiosInstance.post("/auth/logout");
 			set({ authUser: null });
-			
+			set({ profilePics: null });
+
 			toast.success("Logged out successfully");
 			get().disconnectSocket();
-
 		} catch (error) {
 			toast.error(error.response.data.message);
 		}
@@ -112,7 +121,8 @@ export const useAuthStore = create((set, get) => ({
 		set({ isUpdatingProfile: true });
 		try {
 			const res = await axiosInstance.put("/auth/update-profile", data);
-			set({ authUser: res.data });
+			set({ profilePics: res.data });
+
 			toast.success("Profile updated successfully");
 		} catch (error) {
 			console.log("error in update profile:", error);
@@ -121,7 +131,7 @@ export const useAuthStore = create((set, get) => ({
 			set({ isUpdatingProfile: false });
 		}
 	},
-	   
+
 	editProfileData: async (data) => {
 		try {
 			const res = await axiosInstance.put("/auth/edit-profile", data);
@@ -152,6 +162,5 @@ export const useAuthStore = create((set, get) => ({
 	},
 	disconnectSocket: () => {
 		if (get().socket?.connected) get().socket.disconnect();
-
 	},
 }));

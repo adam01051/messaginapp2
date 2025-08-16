@@ -38,7 +38,7 @@ const ChatContainer = () => {
 				// Otherwise, close chat container
 				closeChat();
 			}
-
+			
 
 		};
 		document.addEventListener("keydown", handleEsc);
