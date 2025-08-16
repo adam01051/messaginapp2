@@ -20,7 +20,7 @@ passport.use(
                     "SELECT * FROM users WHERE email = $1",
                     [email]
 				);
-				const tempProfileImage = profile.photos[0]?.value || "/avatar.png";
+				const tempProfileImage = profile.photos[0]?.value || "./public/avatar.png";
 
                 if (result.rows.length === 0) {
                      result = await pool.query(
