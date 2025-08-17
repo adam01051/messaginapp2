@@ -3,7 +3,7 @@ import { axiosInstance } from "../lib/axios.js";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 
-
+ 
 
 const BASE_URL =
 	import.meta.env.MODE === "development"
@@ -29,7 +29,7 @@ export const useAuthStore = create((set, get) => ({
 			});
 			set({ addResults: res.data });
 			toast.success("Contact successfully added");
-			
+
 		} catch (error) {
 			console.error("Error in adding user", error);
 			set({ addResults: [] });

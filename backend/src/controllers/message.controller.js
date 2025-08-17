@@ -13,7 +13,7 @@ export const getUsersForSidebar = async (req, res) => {
 				u.id,
 				u.name,
 				u.email,
-				u.profileimage,
+				
 				u.username,
 				MAX(m.created_at) AS last_message_time
 			 FROM contacts c
