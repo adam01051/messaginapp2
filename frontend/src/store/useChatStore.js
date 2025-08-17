@@ -92,6 +92,7 @@ export const useChatStore = create((set, get) => ({
 	},
 	//todo: optimize this one later
 	setSelectedUser: (user) => {
+		
 		const { selectedUser } = get();
 		// If same user, do nothing
 		if (selectedUser?.id === user.id) return;

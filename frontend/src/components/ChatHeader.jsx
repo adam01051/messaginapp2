@@ -11,12 +11,12 @@ const ChatHeader = () => {
 	const { selectedUser } = useChatStore();
 	const { onlineUsers } = useAuthStore();
 
-	
+
 
 	function closeModal() {
 		document.getElementById("my_modal_7").checked = false;
-
-
+	
+		console.log(selectedUser, "from ");
 	}
 	return (
 		<>
