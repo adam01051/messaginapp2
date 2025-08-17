@@ -6,15 +6,24 @@ import { Camera, Mail, User, Contact} from "lucide-react";
 
 
 const ProfilePage = () => {
-	const { authUser, isUpdatingProfile, updateProfile,editProfileData } = useAuthStore();
+	const {
+		authUser,
+		isUpdatingProfile,
+		updateProfile,
+		editProfileData,
+
+	
+	} = useAuthStore();
 	const [selectedImg, setSelectedImg] = useState(null);
 
 
+	
 	const [prototype1, setPrototype1] = useState({
 		id: authUser.id,
 		name: authUser.name,
 		username: authUser.username,
-		number:authUser.number
+		number: authUser.number,
+		profilePic: authUser?.profilePics?.[0]?.profile_url
 	})
 
 	const handleProfileData = async () => {
@@ -22,6 +31,8 @@ const ProfilePage = () => {
 		await editProfileData(prototype1);
 	
 	};
+	
+
 	
 	const handleImageUpload = async (e) => {
 		const file = e.target.files[0];
@@ -52,7 +63,7 @@ const ProfilePage = () => {
 					<div className="flex flex-col items-center gap-4">
 						<div className="relative">
 							<img
-								src={selectedImg || authUser.profileimage || "/avatar.png"}
+								src={selectedImg || prototype1.profilePic|| "/avatar.png"}
 								alt="Profile"
 								className="size-32 rounded-full object-cover border-4 "
 							/>

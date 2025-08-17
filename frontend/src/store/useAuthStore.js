@@ -54,9 +54,9 @@ export const useAuthStore = create((set, get) => ({
 	checkAuth: async () => {
 		try {
 			const res = await axiosInstance.get("/auth/check");
-
+			
 			set({ authUser: res.data });
-
+			console.log(res.data, "this is checkauth");
 			get().connectSocket();
 		} catch (error) {
 			console.log("Error in checkAuth:", error);
@@ -88,6 +88,7 @@ export const useAuthStore = create((set, get) => ({
 		try {
 			const res = await axiosInstance.post("/auth/login", data);
 			set({ authUser: res.data });
+			console.log(res.data,'this is from authchats store');
 
 			//getimmages(res.data.id)
 			const picsRes = await axiosInstance.get("/auth/images");

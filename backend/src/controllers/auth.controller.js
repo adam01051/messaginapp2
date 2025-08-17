@@ -67,8 +67,6 @@ export const signup = async (req, res) => {
 				.json({ message: "Password must be at least 6 characters" });
 		}
 
-		
-
 		const checkEmail = await pool.query("select * from users where email = $1", [
 			email,
 		]);
@@ -106,7 +104,7 @@ export const searchUser = async (req, res) => {
 			[username] // % for partial matches
 		);
 
-		console.log(result.rows);
+	
 		res.json(result.rows); // ✅ return results to frontend
 	} catch (error) {
 		console.log("Error in searchUser:", error.message);
@@ -125,10 +123,7 @@ export const login = async (req, res) => {
 			"SELECT * FROM users WHERE email = $1",
 			[email]
 		);
-
 		const user = userDetails.rows[0];
-
-		
 		if (!user) {
 			console.log("working login email check");
 			return res.status(400).json({ message: "Invalid credentials" });
@@ -142,12 +137,19 @@ export const login = async (req, res) => {
 
 		generateToken(user.id, res);
 
+		const allPics = await pool.query(
+			`SELECT * FROM profile_pics where user_ref =$1 ORDER BY profile_id DESC`,
+			[user.id]
+		);
+		
+
 		res.status(200).json({ 
 			id: user.id,
 			fullName: user.name,
 			email: user.email,
 			username: user.username,
 			number: user.number,
+			profilePic :allPics.rows
 		}); 
 		
 	} catch (error) {
@@ -155,6 +157,27 @@ export const login = async (req, res) => {
 		res.status(500).json({ message: "Internal Server Error" });
 	}
 };
+
+
+export const getImages = async (req, res) => {
+	try {
+		
+
+		const allPics = await pool.query(
+			`SELECT * FROM profile_pics ORDER BY profile_id DESC`
+		);
+		res.status(200).json(allPics.rows);
+	} catch (error) {
+		console.log("error in getting images:", error);
+		res.status(500).json({ message: "Internal server error" });
+	}
+};
+
+
+
+
+
+
 
 export const logout = (req, res) => {
 	try {
@@ -186,14 +209,11 @@ export const updateProfile = async (req, res) => {
 			[uploadResponse.secure_url, userId]
 		);*/ //will change into adding  profile picture on the seperte table so that user can have multiple profile pics
 		
-		 await pool.query(
-			"insert into profile_pics (profile_url,user_ref) values ($1,$2) ",
+		const allPics= await pool.query(
+			"insert into profile_pics (profile_url,user_ref) values ($1,$2)  returning *",
 			[uploadResponse.secure_url,userId]
 		);
-		const allPics = await pool.query(
-			`SELECT profile_id, profile_url FROM profile_pics WHERE user_ref = $1  ORDER BY profile_id DESC`,
-			[userId]
-		);
+		
 
 	
 		res.status(200).json(allPics.rows);
@@ -204,26 +224,6 @@ export const updateProfile = async (req, res) => {
 };
 
 
-
-export const getImages = async (req, res) => {
-
-	try {
-		const userId = req.user.id;
-	
-
-		const allPics = await pool.query(
-			`SELECT profile_id, profile_url FROM profile_pics WHERE user_ref = $1  ORDER BY profile_id DESC`,
-			[userId]
-		);
-		res.status(200).json(allPics.rows);
-
-
-} catch (error) {
-	console.log("error in getting images:", error);
-	res.status(500).json({ message: "Internal server error" });
-}
-
- }
 
 
 export const editProfileData = async (req, res) => {
@@ -257,13 +257,20 @@ export const editProfileData = async (req, res) => {
 
 
 
-
-export const checkAuth = (req, res) => {
+export const checkAuth = async (req, res) => {
 	try {
-		
-		res.status(200).json(req.user);
+		const allPics = await pool.query(
+			`SELECT * FROM profile_pics WHERE user_ref = $1 ORDER BY profile_id DESC`,
+			[req.user.id]
+		);
+
+		res.status(200).json({
+			...req.user,
+			profilePics: allPics.rows,
+		});
 	} catch (error) {
 		console.log("Error in checkAuth controller", error.message);
 		res.status(500).json({ message: "Internal Server Error" });
 	}
 };
+
