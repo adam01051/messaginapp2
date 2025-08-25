@@ -5,11 +5,6 @@ import { useChatStore } from "../store/useChatStore";
 import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
 
-import { Carousel } from "react-responsive-carousel";
-import "react-responsive-carousel/lib/styles/carousel.min.css";
-
-
-
 
 const ChatHeader = () => {
 	const { selectedUser } = useChatStore();

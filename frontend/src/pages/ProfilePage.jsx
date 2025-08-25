@@ -1,28 +1,28 @@
 import { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
-import { Camera, Mail, User, Contact} from "lucide-react";
+import { Camera, Mail, User, Contact } from "lucide-react";
 
-import Zoom from "react-medium-image-zoom";
-import "react-medium-image-zoom/dist/styles.css";
-
-
+// Lightbox imports
+import Lightbox from "yet-another-react-lightbox";
+import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
+import "yet-another-react-lightbox/styles.css";
+import "yet-another-react-lightbox/plugins/thumbnails.css";
 
 const ProfilePage = () => {
 	const { authUser, isUpdatingProfile, updateProfile, editProfileData } =
 		useAuthStore();
 	const [selectedImg, setSelectedImg] = useState(null);
+	const [lightboxOpen, setLightboxOpen] = useState(false);
 
-	
-
-
-
+	// collect all profile pictures
+	const profilePics = authUser?.profilePics || [];
 
 	const [prototype1, setPrototype1] = useState({
 		id: authUser.id,
 		name: authUser.name,
 		username: authUser.username,
 		number: authUser.number,
-		profilePic: authUser?.profilePics?.[0]?.profile_url,
+		profilePic: profilePics[0]?.profile_url,
 	});
 
 	const handleProfileData = async () => {
@@ -34,7 +34,6 @@ const ProfilePage = () => {
 		if (!file) return;
 
 		const reader = new FileReader();
-
 		reader.readAsDataURL(file);
 
 		reader.onload = async () => {
@@ -44,26 +43,29 @@ const ProfilePage = () => {
 		};
 	};
 
+	// Lightbox slides
+	const slides = profilePics.map((pic) => ({
+		src: pic.profile_url,
+	}));
+
 	return (
 		<div className="h-30 pt-20">
 			<div className="max-w-2xl mx-auto p-4 py-8">
 				<div className="bg-base-300 rounded-xl p-6 space-y-8">
 					<div className="text-center">
-						<h1 className="text-2xl font-semibold ">Profile</h1>
+						<h1 className="text-2xl font-semibold">Profile</h1>
 						<p className="mt-2">Your profile information</p>
 					</div>
 
-					{/* avatar upload section */}
-
+					{/* avatar upload + preview */}
 					<div className="flex flex-col items-center gap-4">
 						<div className="relative">
-							<Zoom>
-								<img
-									src={selectedImg || prototype1.profilePic || "/avatar.png"}
-									alt="Profile"
-									className="size-32 rounded-full object-cover border-4 "
-								/>
-							</Zoom>
+							<img
+								src={selectedImg || prototype1.profilePic || "/avatar.png"}
+								alt="Profile"
+								className="size-32 rounded-full object-cover border-4 cursor-pointer"
+								onClick={() => slides.length > 0 && setLightboxOpen(true)}
+							/>
 							<label
 								htmlFor="avatar-upload"
 								className={`
@@ -94,6 +96,7 @@ const ProfilePage = () => {
 						</p>
 					</div>
 
+					{/* Editable profile info */}
 					<div className="space-y-8">
 						<div className="space-y-1.5">
 							<div className="text-sm text-zinc-400 flex items-center gap-2">
@@ -102,7 +105,7 @@ const ProfilePage = () => {
 							</div>
 							<input
 								type="text"
-								className={`input input-bordered w-full bg-base-200 rounded-lg border`}
+								className="input input-bordered w-full bg-base-200 rounded-lg border"
 								value={prototype1?.name ?? ""}
 								onChange={(e) =>
 									setPrototype1({ ...prototype1, name: e.target.value })
@@ -116,10 +119,13 @@ const ProfilePage = () => {
 							</div>
 							<input
 								type="text"
-								className={`input input-bordered w-full bg-base-200 rounded-lg border`}
+								className="input input-bordered w-full bg-base-200 rounded-lg border"
 								value={prototype1?.username ?? ""}
 								onChange={(e) =>
-									setPrototype1({ ...prototype1, username: e.target.value })
+									setPrototype1({
+										...prototype1,
+										username: e.target.value,
+									})
 								}
 							/>
 						</div>
@@ -142,7 +148,7 @@ const ProfilePage = () => {
 							<input
 								type="tel"
 								value={prototype1?.number ?? ""}
-								className={`input input-bordered w-full bg-base-200 rounded-lg border`}
+								className="input input-bordered w-full bg-base-200 rounded-lg border"
 								onChange={(e) =>
 									setPrototype1({ ...prototype1, number: e.target.value })
 								}
@@ -150,14 +156,15 @@ const ProfilePage = () => {
 						</div>
 
 						<div className="h-30 w-full">
-							<button onClick={handleProfileData} className="btn btn-success  ">
+							<button onClick={handleProfileData} className="btn btn-success">
 								Save
 							</button>
 						</div>
 					</div>
 
+					{/* Account info */}
 					<div className="mt-6 bg-base-300 rounded-xl p-6">
-						<h2 className="text-lg font-medium  mb-4">Account Information</h2>
+						<h2 className="text-lg font-medium mb-4">Account Information</h2>
 						<div className="space-y-3 text-sm">
 							<div className="flex items-center justify-between py-2 border-b border-zinc-700">
 								<span>Member Since</span>
@@ -171,7 +178,18 @@ const ProfilePage = () => {
 					</div>
 				</div>
 			</div>
+
+			{/* Lightbox for multiple profile pictures */}
+			{slides.length > 0 && (
+				<Lightbox
+					open={lightboxOpen}
+					close={() => setLightboxOpen(false)}
+					slides={slides}
+					plugins={[Thumbnails]}
+				/>
+			)}
 		</div>
 	);
 };
+
 export default ProfilePage;
