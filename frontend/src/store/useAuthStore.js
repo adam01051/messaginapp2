@@ -94,7 +94,7 @@ export const useAuthStore = create((set, get) => ({
 			const picsRes = await axiosInstance.get("/auth/images");
 			set({ profilePics: picsRes.data }); 
 		
-			
+		
 
 			toast.success("Logged in successfully");
 

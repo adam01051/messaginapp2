@@ -1,16 +1,25 @@
 import { X, User, Mail,Contact } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
-
+import {  useEffect ,useState} from "react";
 import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
 
 
 const ChatHeader = () => {
 	const { selectedUser } = useChatStore();
-	const { onlineUsers } = useAuthStore();
-
-
+	const { onlineUsers, profilePics } = useAuthStore();
+	const [userPics, setUserPics] = useState([]);
+	
+	useEffect(() => {
+		if (profilePics) {
+			
+			const pics = profilePics.filter((pic) => pic.user_ref === selectedUser.id);
+			
+			setUserPics(pics);
+		}
+		
+	}, [selectedUser, profilePics]);
 
 	function closeModal() {
 		document.getElementById("my_modal_7").checked = false;
@@ -32,9 +41,12 @@ const ChatHeader = () => {
 								{/* Avatar */}
 								<div className="avatar">
 									<div className="size-10 rounded-full relative">
-										
 										<img
-											src={selectedUser?.profileimage || "/avatar.png"}
+											src={
+												userPics.length > 0
+													? userPics[0].profile_url
+													: "/avatar.png"
+											}
 											alt={selectedUser?.name}
 										/>
 									</div>
@@ -86,7 +98,11 @@ const ChatHeader = () => {
 								<div className="relative">
 									<Zoom>
 										<img
-											src={selectedUser?.profileimage || "/avatar.png"}
+											src={
+												userPics.length > 0
+													? userPics[0].profile_url
+													: "/avatar.png"
+											}
 											alt="Profile"
 											className="w-24 h-24 rounded-full object-cover border-2"
 										/>

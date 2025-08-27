@@ -46,6 +46,8 @@ export const addUser = async (req, res) => {
 					return res.status(404).json({ message: "User not found" });
 				}
 		const result2 = await pool.query("insert into contacts (user_id, contact_id) values ($1,$2) returning *", [myId, newContactID]);
+
+
 		res.json({ success: true, contactId: newContactID });
 
 	} catch (error) {
