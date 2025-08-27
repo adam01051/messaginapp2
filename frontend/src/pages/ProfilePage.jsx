@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { Camera, Mail, User, Contact } from "lucide-react";
 
@@ -9,20 +9,35 @@ import "yet-another-react-lightbox/styles.css";
 import "yet-another-react-lightbox/plugins/thumbnails.css";
 
 const ProfilePage = () => {
-	const { authUser, isUpdatingProfile, updateProfile, editProfileData } =
-		useAuthStore();
+	const {
+		authUser,
+		isUpdatingProfile,
+		updateProfile,
+		editProfileData,
+		profilePics,
+	} = useAuthStore();
 	const [selectedImg, setSelectedImg] = useState(null);
 	const [lightboxOpen, setLightboxOpen] = useState(false);
+	const [userPics, setUserPics] = useState([]);
 
-	// collect all profile pictures
-	const profilePics = authUser?.profilePics || [];
+
+	useEffect(() => {
+		if (profilePics && authUser) {
+			
+			const pics = profilePics.filter((pic) => pic.user_ref === authUser.id);
+			
+			setUserPics(pics);
+		}
+		
+	}, [authUser, profilePics]);
+
 
 	const [prototype1, setPrototype1] = useState({
 		id: authUser.id,
 		name: authUser.name,
 		username: authUser.username,
 		number: authUser.number,
-		profilePic: profilePics[0]?.profile_url,
+		
 	});
 
 	const handleProfileData = async () => {
@@ -44,7 +59,7 @@ const ProfilePage = () => {
 	};
 
 	// Lightbox slides
-	const slides = profilePics.map((pic) => ({
+	const slides = userPics.map((pic) => ({
 		src: pic.profile_url,
 	}));
 
@@ -61,7 +76,12 @@ const ProfilePage = () => {
 					<div className="flex flex-col items-center gap-4">
 						<div className="relative">
 							<img
-								src={selectedImg || prototype1.profilePic || "/avatar.png"}
+								src={
+									selectedImg ||
+									(userPics.length > 0
+										? userPics[0].profile_url
+										: "/avatar.png")
+								}
 								alt="Profile"
 								className="size-32 rounded-full object-cover border-4 cursor-pointer"
 								onClick={() => slides.length > 0 && setLightboxOpen(true)}

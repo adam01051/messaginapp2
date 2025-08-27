@@ -166,6 +166,7 @@ export const getImages = async (req, res) => {
 		const allPics = await pool.query(
 			`SELECT * FROM profile_pics ORDER BY profile_id DESC`
 		);
+		
 		res.status(200).json(allPics.rows);
 	} catch (error) {
 		console.log("error in getting images:", error);
