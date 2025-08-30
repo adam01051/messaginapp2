@@ -76,7 +76,14 @@ const ChatHeader = () => {
 									<h3 className="font-medium flex justify-start ">
 										{selectedUser?.name}
 									</h3>
-									<p className="text-sm text-base-content/70 flex justify-start">
+									<p
+										className={`text-sm text-base-content/70 flex justify-start ${
+											onlineUsers.includes(selectedUser.id.toString())
+												? "text-green-600 px-1 rounded"
+												: ""
+										}`}
+										
+									>
 										{onlineUsers.includes(selectedUser?.id?.toString())
 											? "Online"
 											: "Offline"}
