@@ -8,7 +8,7 @@ const Sidebar = () => {
 	const { getUsers, users, selectedUser, setSelectedUser, isUsersLoading } =
 		useChatStore();
 
-	const { onlineUsers } = useAuthStore();
+	const { onlineUsers, profilePics  } = useAuthStore();
 	const [showOnlineOnly, setShowOnlineOnly] = useState(false);
 	
 
@@ -65,7 +65,10 @@ const Sidebar = () => {
 					>
 						<div className="relative mx-auto lg:mx-0">
 							<img
-								src={user.profileimage || "/avatar.png"}
+								src={
+									profilePics.filter((pic) => pic.user_ref === user.id)?.[0]
+										?.profile_url || "/avatar.png"
+								}
 								alt={user.name}
 								className="size-12 object-cover rounded-full"
 							/>
