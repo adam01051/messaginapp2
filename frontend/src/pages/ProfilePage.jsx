@@ -4,9 +4,11 @@ import { Camera, Mail, User, Contact } from "lucide-react";
 
 // Lightbox imports
 import Lightbox from "yet-another-react-lightbox";
-import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
 import "yet-another-react-lightbox/styles.css";
-import "yet-another-react-lightbox/plugins/thumbnails.css";
+
+import Counter from "yet-another-react-lightbox/plugins/counter";
+
+import "yet-another-react-lightbox/plugins/counter.css";
 
 const ProfilePage = () => {
 	const {
@@ -205,7 +207,7 @@ const ProfilePage = () => {
 					open={lightboxOpen}
 					close={() => setLightboxOpen(false)}
 					slides={slides}
-					plugins={[Thumbnails]}
+				    plugins={[Counter]}
 				/>
 			)}
 		</div>
