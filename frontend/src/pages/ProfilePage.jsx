@@ -24,6 +24,7 @@ const ProfilePage = () => {
 
 
 	useEffect(() => {
+		
 		if (profilePics && authUser) {
 			
 			const pics = profilePics.filter((pic) => pic.user_ref === authUser.id);

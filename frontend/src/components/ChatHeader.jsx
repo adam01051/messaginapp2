@@ -5,27 +5,47 @@ import {  useEffect ,useState} from "react";
 import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
 
+import Lightbox from "yet-another-react-lightbox";
+import "yet-another-react-lightbox/styles.css";
+
+import Counter from "yet-another-react-lightbox/plugins/counter";
+
+import "yet-another-react-lightbox/plugins/counter.css";
+
 
 const ChatHeader = () => {
 	const { selectedUser } = useChatStore();
 	const { onlineUsers, profilePics } = useAuthStore();
 	const [userPics, setUserPics] = useState([]);
-	
+	const [lightboxOpen, setLightboxOpen] = useState(false);
+
+
 	useEffect(() => {
-		if (profilePics) {
-			
-			const pics = profilePics.filter((pic) => pic.user_ref === selectedUser.id);
-			
+		
+	
+		if (profilePics && selectedUser) {
+			console.log(profilePics.user_ref,"profile pic id");
+			console.log(selectedUser.id,"selected  user ref");
+			const pics = profilePics.filter(
+				(pic) => pic.user_ref === selectedUser.id
+			);
+
 			setUserPics(pics);
 		}
-		
-	}, [selectedUser, profilePics]);
+	}, [profilePics, selectedUser]);
 
 	function closeModal() {
 		document.getElementById("my_modal_7").checked = false;
 	
-		console.log(selectedUser, "from ");
-	}
+		
+	};
+	const slides = userPics.map((pic) => ({
+		src: pic.profile_url,
+	}));
+
+
+
+
 	return (
 		<>
 			{/* Header */}
@@ -96,17 +116,16 @@ const ChatHeader = () => {
 							{/* Avatar */}
 							<div className="flex flex-col items-center justify-center gap-2 w-24 h-24 mx-auto">
 								<div className="relative">
-									<Zoom>
-										<img
-											src={
-												userPics.length > 0
-													? userPics[0].profile_url
-													: "/avatar.png"
-											}
-											alt="Profile"
-											className="w-24 h-24 rounded-full object-cover border-2"
-										/>
-									</Zoom>
+									<img
+										src={
+											userPics.length > 0
+												? userPics[0].profile_url
+												: "/avatar.png"
+										}
+										alt="Profile"
+										className="w-24 h-24 rounded-full object-cover border-2 cursor-pointer"
+										onClick={() => slides.length > 0 && setLightboxOpen(true)}
+									/>
 								</div>
 							</div>
 
@@ -156,6 +175,16 @@ const ChatHeader = () => {
 				<label className="modal-backdrop" htmlFor="my_modal_7">
 					Close
 				</label>
+
+				{/* Lightbox for multiple profile pictures */}
+				{slides.length > 0 && (
+					<Lightbox
+						open={lightboxOpen}
+						close={() => setLightboxOpen(false)}
+						slides={slides}
+						plugins={[Counter]}
+					/>
+				)}
 			</div>
 		</>
 	);

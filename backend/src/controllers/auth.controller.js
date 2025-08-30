@@ -263,8 +263,8 @@ export const editProfileData = async (req, res) => {
 export const checkAuth = async (req, res) => {
 	try {
 		const allPics = await pool.query(
-			`SELECT * FROM profile_pics WHERE user_ref = $1 ORDER BY profile_id DESC`,
-			[req.user.id]
+			`SELECT * FROM profile_pics ORDER BY profile_id DESC`,
+			
 		);
 
 		res.status(200).json({
