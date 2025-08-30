@@ -13,9 +13,10 @@ export const getUsersForSidebar = async (req, res) => {
 				u.id,
 				u.name,
 				u.email,
-				
 				u.username,
+
 				MAX(m.created_at) AS last_message_time
+				
 			 FROM contacts c
 			 JOIN users u 
 			   ON c.contact_id = u.id   -- ✅ get user details of contacts
