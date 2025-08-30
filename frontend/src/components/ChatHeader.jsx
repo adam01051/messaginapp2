@@ -24,8 +24,7 @@ const ChatHeader = () => {
 		
 	
 		if (profilePics && selectedUser) {
-			console.log(profilePics.user_ref,"profile pic id");
-			console.log(selectedUser.id,"selected  user ref");
+
 			const pics = profilePics.filter(
 				(pic) => pic.user_ref === selectedUser.id
 			);

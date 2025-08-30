@@ -1,5 +1,5 @@
 import { useChatStore } from "../store/useChatStore";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import ChatHeader from "./ChatHeader";
 import MessageInput from "./MessageInput";
@@ -7,13 +7,14 @@ import MessageSkeleton from "./skeletons/MessageSkeleton";
 import { useAuthStore } from "../store/useAuthStore";
 import { formatMessageTime } from "../lib/utils";
 
+// Lightbox imports
+import Lightbox from "yet-another-react-lightbox";
+import "yet-another-react-lightbox/styles.css";
 
-import Zoom from "react-medium-image-zoom";
-import "react-medium-image-zoom/dist/styles.css";
-
+import Counter from "yet-another-react-lightbox/plugins/counter";
+import "yet-another-react-lightbox/plugins/counter.css";
 
 const ChatContainer = () => {
-
 	const {
 		messages,
 		getMessages,
@@ -22,56 +23,79 @@ const ChatContainer = () => {
 		subscribeToMessages,
 		unsubscribeFromMessages,
 		closeChat,
-		
 	} = useChatStore();
 
+	const { authUser, profilePics } = useAuthStore();
+	const messageEndRef = useRef(null);
 
+	const [lightboxOpen, setLightboxOpen] = useState(false);
+	const [slides, setSlides] = useState([]);
+	const [userPics, setUserPics] = useState([]);
+	const [selectedUserPics, setSelectedUserPics] = useState([]);
+
+	// Escape key to close chat
 	useEffect(() => {
 		const handleEsc = (e) => {
-			const modalCheckbox = document.getElementById("my_modal_7");
 			if (e.key !== "Escape") return;
 
-			if (modalCheckbox && modalCheckbox.checked) {
-				// If modal is open, close it
-				modalCheckbox.checked = false;
-			} else {
-				// Otherwise, close chat container
-				closeChat();
+			// If Lightbox is open, close it first
+			if (lightboxOpen) {
+				setLightboxOpen(false);
+				return;
 			}
-			
 
+			// Otherwise close chat
+			closeChat();
 		};
+
 		document.addEventListener("keydown", handleEsc);
 		return () => document.removeEventListener("keydown", handleEsc);
-	}, [closeChat]);
+	}, [closeChat, lightboxOpen]);
 
-
-	const { authUser } = useAuthStore();
-	const messageEndRef = useRef(null);
-	
+	// Fetch messages and subscribe
 	useEffect(() => {
+		if (!selectedUser?.id) return;
 		getMessages(selectedUser.id);
-
 		subscribeToMessages();
-
 		return () => unsubscribeFromMessages();
-	}, [
-		selectedUser.id,
-		getMessages,
-		subscribeToMessages,
-		unsubscribeFromMessages,
-	]);
+	}, [selectedUser?.id, subscribeToMessages, getMessages,unsubscribeFromMessages]);
 
-	
+	// Prepare profile pics for both users
 	useEffect(() => {
-		if (messageEndRef.current && messages) {
+		if (profilePics && authUser) {
+			setUserPics(profilePics.filter((pic) => pic.user_ref === authUser.id));
+			
+		}
+		if (profilePics && selectedUser) {
+			setSelectedUserPics(
+				profilePics.filter((pic) => pic.user_ref === selectedUser.id)
+				
+			);
+			
+		}
+	}, [profilePics, authUser, selectedUser]);
+
+	// Scroll to bottom on new messages
+	useEffect(() => {
+		if (messageEndRef.current && messages?.length) {
 			messageEndRef.current.scrollIntoView({ behavior: "smooth" });
 		}
 	}, [messages]);
 
+	const handleAvatarClick = (isAuthUser) => {
+
+		if (isAuthUser && userPics.length > 0) {
+			setSlides(userPics.map((pic) => ({ src: pic.profile_url })));
+			setLightboxOpen(true);
+		} else if (!isAuthUser && selectedUserPics.length > 0) {
+			setSlides(selectedUserPics.map((pic) => ({ src: pic.profile_url })));
+			setLightboxOpen(true);
+		}
+	};
+
 	if (!authUser || isMessagesLoading) {
 		return (
-			<div id="chat" className="  flex-1 flex flex-col overflow-auto">
+			<div id="chat" className="flex-1 flex flex-col overflow-auto">
 				<ChatHeader />
 				<MessageSkeleton />
 				<MessageInput />
@@ -84,62 +108,61 @@ const ChatContainer = () => {
 			<ChatHeader />
 
 			<div className="flex-1 overflow-y-auto p-4 space-y-4">
-				{messages.map((message) => (
-					<div
-						key={message.id}
-						className={`chat ${
-							String(message.sender_id) === String(authUser.id)
-								? "chat-end"
-								: "chat-start"
-						}`}
-						ref={messageEndRef}
-					>
-						<div className=" chat-image avatar">
-							<div className="size-10 rounded-full border">
-								<img
-									src={
-										String(message.sender_id) === String(authUser.id)
-											? authUser.profileimage || "/avatar.png"
-											: selectedUser.profileimage || "/avatar.png"
-									}
-									alt="profile pic"
-								/>
+				{messages.map((message) => {
+					const isAuthUserMsg =
+						String(message.sender_id) === String(authUser.id);
+					return (
+						<div
+							key={message.id}
+							className={`chat ${isAuthUserMsg ? "chat-end" : "chat-start"}`}
+							ref={messageEndRef}
+						>
+							<div className="chat-image avatar">
+								<div className="size-10 rounded-full border cursor-pointer">
+									<img
+										src={
+											isAuthUserMsg
+												? userPics[0]?.profile_url || "/avatar.png"
+												: selectedUserPics[0]?.profile_url || "/avatar.png"
+										}
+										alt="profile pic"
+										onClick={() => handleAvatarClick(isAuthUserMsg)}
+									/>
+								</div>
 							</div>
-						</div>
-						<div className="chat-header mb-1">
-							<time className="text-xs opacity-50 ml-1">
-								{formatMessageTime(message.created_at)}
-							</time>
-						</div>
-						<div className="chat-bubble flex flex-col">
-							{  message.image && (
-								<Zoom>
+							<div className="chat-header mb-1">
+								<time className="text-xs opacity-50 ml-1">
+									{formatMessageTime(message.created_at)}
+								</time>
+							</div>
+							<div className="chat-bubble flex flex-col">
+								{message.image && (
 									<img
 										src={message.image}
 										alt="Attachment"
 										className="sm:max-w-[200px] rounded-md mb-2"
 									/>
-								</Zoom>
-							)}
-							{message.content && <p>{message.content}</p>}
+								)}
+								{message.content && <p>{message.content}</p>}
+							</div>
 						</div>
-					</div>
-				))}
+					);
+				})}
 			</div>
 
 			<MessageInput />
+
+			{/* Lightbox */}
+			{slides.length > 0 && (
+				<Lightbox
+					open={lightboxOpen}
+					close={() => setLightboxOpen(false)}
+					slides={slides}
+					plugins={[Counter]}
+				/>
+			)}
 		</div>
 	);
 };
+
 export default ChatContainer;
-/*
-<button className="btn" onClick={()=>document.getElementById('my_modal_2').showModal()}>open modal</button>
-<dialog id="my_modal_2" className="modal">
-  <div className="modal-box">
-    <h3 className="font-bold text-lg">Hello!</h3>
-    <p className="py-4">Press ESC key or click outside to close</p>
-  </div>
-  <form method="dialog" className="modal-backdrop">
-    <button>close</button>
-  </form>
-</dialog>*/
