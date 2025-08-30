@@ -2,7 +2,7 @@ import { X, User, Mail,Contact } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
 import {  useEffect ,useState} from "react";
-import Zoom from "react-medium-image-zoom";
+
 import "react-medium-image-zoom/dist/styles.css";
 
 import Lightbox from "yet-another-react-lightbox";
@@ -82,7 +82,6 @@ const ChatHeader = () => {
 												? "text-green-600 px-1 rounded"
 												: ""
 										}`}
-										
 									>
 										{onlineUsers.includes(selectedUser?.id?.toString())
 											? "Online"
@@ -96,6 +95,7 @@ const ChatHeader = () => {
 					<button onClick={closeModal}>
 						<X />
 					</button>
+				
 				</div>
 			</div>
 
