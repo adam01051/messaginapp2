@@ -29,6 +29,7 @@ export const getUsersForSidebar = async (req, res) => {
 			[loggedInUserId]
 		);
 	  
+		
 	
 	
 		const filteredUsers = result.rows;
@@ -40,6 +41,28 @@ export const getUsersForSidebar = async (req, res) => {
 		res.status(500).json({ error: "Internal server error" });
 	}
 };
+
+export const newUser = async (req, res) => {
+	try {
+		const { id: userToChatId } = req.params;
+		const myId = req.user.id;
+
+		const result = await pool.query(
+			"select * from messages where (sender_id =$1 and receiver_id =$2 ) or (sender_id =$2 and receiver_id =$1 ) ORDER BY created_at ASC",
+			[myId, userToChatId]
+		);
+		const messages = result.rows;
+
+		res.status(200).json(messages);
+	} catch (error) {
+		console.log("Error in getMessages controller: ", error.message);
+		res.status(500).json({ error: "Internal server error" });
+	}
+};
+
+
+
+
 
 export const getMessages = async (req, res) => {
 	try {

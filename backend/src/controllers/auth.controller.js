@@ -80,8 +80,8 @@ export const signup = async (req, res) => {
 		const hashedPassword = await bcrypt.hash(password, salt);
 
 		const result = await pool.query(
-			"insert into users (name, email,username, password_, nummber) values ($1, $2, $3, $4,$5) RETURNING id, name AS fullName, email,username",
-			[fullName, email, username, hashedPassword,null]
+			"insert into users (name, email,username, password_, number) values ($1, $2, $3, $4,$5) RETURNING id, name AS fullName, email,username",
+			[fullName, email, username, hashedPassword, null]
 		);
 		const newUser = result.rows[0];
 	
