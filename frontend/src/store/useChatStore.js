@@ -14,6 +14,7 @@ export const useChatStore = create((set, get) => ({
 	isMessagesLoading: false,
 	isNewMessage: null,
 
+
 	getUsers: async () => {
 		set({ isUsersLoading: true });
 		try {
@@ -21,9 +22,6 @@ export const useChatStore = create((set, get) => ({
 
 			set({ users: Array.isArray(res.data) ? res.data : [] });
 
-			const res2 = await axiosInstance.get("/messages/newUser");
-			set({ newUser: res2.data });
-		
 		} catch (error) {
 			toast.error(error.response.data.message);
 			console.log("there was  problem getting users from database");

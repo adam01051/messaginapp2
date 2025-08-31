@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
 import SidebarSkeleton from "./skeletons/SidebarSkeleton";
-import { Users } from "lucide-react";
+import { Divide, Users } from "lucide-react";
 
 const Sidebar = () => {
-	const { getUsers, users, selectedUser, setSelectedUser, isUsersLoading } =
+	const { getUsers, users, selectedUser, setSelectedUser, isUsersLoading} =
 		useChatStore();
 
 	const { onlineUsers, profilePics  } = useAuthStore();
@@ -16,7 +16,8 @@ const Sidebar = () => {
 		getUsers();
 	}, [getUsers]);
 
-
+	console.log(users[0]);
+	
 	const safeUsers = Array.isArray(users) ? users : [];
 	const filteredUsers = showOnlineOnly
 		? safeUsers.filter((user) => onlineUsers.includes(user.id.toString()))
@@ -61,6 +62,7 @@ const Sidebar = () => {
 									? "bg-base-300 ring-1 ring-base-300"
 									: ""
 							}
+
             `}
 					>
 						<div className="relative mx-auto lg:mx-0">
@@ -93,6 +95,7 @@ const Sidebar = () => {
 								{onlineUsers.includes(user.id.toString())
 									? "Online"
 									: "Offline"}
+								{!user?.is_contact ? <div className="text-red-900">not registered</div>:""}
 							</div>
 						</div>
 					</button>

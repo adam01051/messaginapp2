@@ -3,63 +3,60 @@ import pool from "../lib/postgres.js";
 import cloudinary from "../lib/cloudinary.js";
 import { getReceiverSocketId, io } from "../lib/socket.js";
 
+
 export const getUsersForSidebar = async (req, res) => {
 	try {
-		const loggedInUserId = req.user.id;
+		const myId = req.user.id;
 
-		
 		const result = await pool.query(
-			`SELECT 
-				u.id,
-				u.name,
-				u.email,
-				u.username,
-
-				MAX(m.created_at) AS last_message_time
-				
-			 FROM contacts c
-			 JOIN users u 
-			   ON c.contact_id = u.id   -- ✅ get user details of contacts
-			 LEFT JOIN messages m 
-			   ON (u.id = m.sender_id AND m.receiver_id = $1) 
-			   OR (u.id = m.receiver_id AND m.sender_id = $1)
-			 WHERE c.user_id = $1        -- ✅ only my contacts
-			 GROUP BY u.id
-			 ORDER BY last_message_time DESC NULLS LAST`,
-			[loggedInUserId]
+			`
+			-- Get users from your contacts
+			SELECT 
+			  u.id,
+			  u.name,
+			  u.email,
+			  u.username,
+			  MAX(m.created_at) AS last_message_time,
+			  true AS is_contact
+			FROM contacts c
+			JOIN users u 
+			  ON c.contact_id = u.id
+			LEFT JOIN messages m 
+			  ON (u.id = m.sender_id AND m.receiver_id = $1) 
+			  OR (u.id = m.receiver_id AND m.sender_id = $1)
+			WHERE c.user_id = $1
+			GROUP BY u.id
+		  
+			UNION
+		  
+			-- Get users who messaged you, but are NOT in your contacts
+			SELECT 
+			  u.id,
+			  u.name,
+			  u.email,
+			  u.username,
+			  MAX(m.created_at) AS last_message_time,
+			  false AS is_contact
+			FROM messages m
+			JOIN users u 
+			  ON u.id = m.sender_id
+			WHERE m.receiver_id = $1
+			  AND u.id NOT IN (
+				SELECT contact_id FROM contacts WHERE user_id = $1
+			  )
+			GROUP BY u.id
+		  
+			ORDER BY last_message_time DESC NULLS LAST
+			`,
+			[myId]
 		);
-	  
-		
-	
-	
-		const filteredUsers = result.rows;
-		
 
-		res.status(200).json(filteredUsers);
+		res.status(200).json(result.rows);
 	} catch (error) {
 		console.error("Error in getUsersForSidebar: ", error.message);
 		res.status(500).json({ error: "Internal server error" });
 	}
 };
-
-export const newUser = async (req, res) => {
-	try {
-		const { id: userToChatId } = req.params;
-		const myId = req.user.id;
-
-		const result = await pool.query(
-			"select * from messages where (sender_id =$1 and receiver_id =$2 ) or (sender_id =$2 and receiver_id =$1 ) ORDER BY created_at ASC",
-			[myId, userToChatId]
-		);
-		const messages = result.rows;
-
-		res.status(200).json(messages);
-	} catch (error) {
-		console.log("Error in getMessages controller: ", error.message);
-		res.status(500).json({ error: "Internal server error" });
-	}
-};
-
 
 
 
