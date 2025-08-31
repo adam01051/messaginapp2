@@ -49,14 +49,14 @@ const ChatHeader = () => {
 		<>
 			{/* Header */}
 
-			<div className="p-2.5 border-b border-base-300">
-				<div className="flex items-center justify-between">
+			<div className="p-2.5 border-b border-base-300 flex justify-between">
+				<div className="flex items-center ">
 					<label
 						htmlFor="my_modal_7"
 						className="btn bg-transparent  hover:bg-transparent  border-hidden border-opacity-0 rounded-none border-0 shadow-none"
 					>
-						<div className="cursor-pointer">
-							<div className="flex items-center gap-3">
+						<div className="flex min-w-full ">
+							<div className=" cursor-pointer flex items-center  gap-3">
 								{/* Avatar */}
 								<div className="avatar">
 									<div className="size-10 rounded-full relative">
@@ -72,7 +72,7 @@ const ChatHeader = () => {
 								</div>
 
 								{/* User info */}
-								<div>
+								<div className="">
 									<h3 className="font-medium flex justify-start ">
 										{selectedUser?.name}
 									</h3>
@@ -92,10 +92,21 @@ const ChatHeader = () => {
 						</div>
 					</label>
 					{/* Close button */}
-					<button onClick={closeModal}>
-						<X />
-					</button>
-				
+				</div>
+				<div className="flex w-3/4 justify-center">
+					{!selectedUser?.is_contact ? (
+						<div role="alert" className="alert pt-1.5 pb-1.5">
+							<span className="text-sm">
+								New message request – this user is not in your contacts.
+							</span>
+							<div className="flex justify-self-center">
+								<button className="btn btn-sm btn-success mx-3 ">Accept</button>
+								<button className="btn btn-sm btn-error mx-3">Block</button>
+							</div>
+						</div>
+					) : (
+						""
+					)}
 				</div>
 			</div>
 
