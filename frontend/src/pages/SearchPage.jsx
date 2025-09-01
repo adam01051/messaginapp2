@@ -4,11 +4,18 @@ import { Check } from "lucide-react";
 
 const SearchPage = () => {
 	const [username, setUsername] = useState("");
-    const { searchUser, searchResults, addUser,addResults} = useAuthStore();
-
+    const { searchUser, searchResults, addUser,addResults,profilePics,authUser} = useAuthStore();
+	const [userPics, setUserPics] = useState([]);
 	const handleSearch = () => {
 		searchUser(username); // triggers API call and updates Zustand state
 	};
+	useEffect(() => {
+		if (profilePics && authUser) {
+			const pics = profilePics.filter((pic) => pic.user_ref === authUser.id);
+
+			setUserPics(pics);
+		}
+	}, [authUser, profilePics]);
 
 	const handleAdd = () => {
 		
@@ -67,7 +74,12 @@ const SearchPage = () => {
 													<div className="avatar">
 														<div className="mask mask-squircle h-12 w-12">
 															<img
-																src={user.profileimage || "/avatar.png"}
+																src={
+																	
+																	(userPics.length > 0
+																		? userPics[0].profile_url
+																		: "/avatar.png")
+																}
 																alt={user.name}
 															/>
 														</div>

@@ -11,13 +11,10 @@ const Sidebar = () => {
 	const { onlineUsers, profilePics  } = useAuthStore();
 	const [showOnlineOnly, setShowOnlineOnly] = useState(false);
 	
-
 	useEffect(() => {
 		getUsers();
 	}, [getUsers]);
 
-	
-	
 	const safeUsers = Array.isArray(users) ? users : [];
 	const filteredUsers = showOnlineOnly
 		? safeUsers.filter((user) => onlineUsers.includes(user.id.toString()))
@@ -95,7 +92,11 @@ const Sidebar = () => {
 								{onlineUsers.includes(user.id.toString())
 									? "Online"
 									: "Offline"}
-								{!user?.is_contact ? <div className="text-red-900">not registered</div>:""}
+								{!user?.is_contact ? (
+									<div className="text-red-900">Not registered</div>
+								) : (
+									""
+								)}
 							</div>
 						</div>
 					</button>

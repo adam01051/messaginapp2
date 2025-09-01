@@ -8,6 +8,7 @@ import express from "express";
 
 
 
+
 export const initGoogleAuth = passport.authenticate("google", {
 	scope: ["email", "profile"],
 	session: false,
@@ -23,7 +24,6 @@ export const googleAuthCallback = (req, res, next) => {
 			);
 			return res.redirect("http://localhost:5173?error=auth_failed");
 		}
-
 		generateToken(user.id, res); // Sets JWT cookie
 		res.redirect("http://localhost:5173");
 	})(req, res, next);
@@ -48,8 +48,7 @@ export const addUser = async (req, res) => {
 			"SELECT id FROM users WHERE username = $1", 
 			[username]
 		);
-		
-		
+
         const newContactID = result.rows[0]?.id;
 				if (!newContactID) {
 					return res.status(404).json({ message: "User not found" });
@@ -64,6 +63,8 @@ export const addUser = async (req, res) => {
 		res.status(500).json({ message: "problem in finding user" });
 	}
 }
+
+
 export const deleteUser = async (req, res) => {
 	const { user } = req.query;
 	const myId = req.user.id;
@@ -86,8 +87,6 @@ export const deleteUser = async (req, res) => {
 		res.status(500).json({ message: "problem in finding user" });
 	}
 };
-
-
 
 
 
@@ -196,10 +195,9 @@ export const login = async (req, res) => {
 };
 
 
+
 export const getImages = async (req, res) => {
 	try {
-		
-
 		const allPics = await pool.query(
 			`SELECT * FROM profile_pics ORDER BY profile_id DESC`
 		);
@@ -215,12 +213,8 @@ export const getImages = async (req, res) => {
 
 
 
-
-
 export const logout = (req, res) => {
 	try {
-	
-		
 		res.cookie("jwt", "", { maxAge: 0 });
 		res.status(200).json({ message: "Logged out successfully" });
 
@@ -230,12 +224,14 @@ export const logout = (req, res) => {
 	}
 };
 
+
+
+
 export const updateProfile = async (req, res) => {
 	try {
 		const { profilePic } = req.body;
 		const userId = req.user.id;
-	
-		
+
 		if (!profilePic) {
 			return res.status(400).json({ message: "Profile pic is required" });
 		}
@@ -251,8 +247,6 @@ export const updateProfile = async (req, res) => {
 			"insert into profile_pics (profile_url,user_ref) values ($1,$2)  returning *",
 			[uploadResponse.secure_url,userId]
 		);
-		
-
 	
 		res.status(200).json(allPics.rows);
 	} catch (error) {
@@ -265,7 +259,6 @@ export const updateProfile = async (req, res) => {
 
 
 export const editProfileData = async (req, res) => {
-
 
 	try {
 		const { name, username, number } = req.body;
@@ -285,7 +278,6 @@ export const editProfileData = async (req, res) => {
 
 		res.status(200).json(result.rows[0]);
 
-
 	} catch (error) {
 		console.log("error in update profile:", error);
 		res.status(500).json({ message: "Internal server error" });
@@ -299,7 +291,6 @@ export const checkAuth = async (req, res) => {
 	try {
 		const allPics = await pool.query(
 			`SELECT * FROM profile_pics ORDER BY profile_id DESC`,
-			
 		);
 
 		res.status(200).json({
