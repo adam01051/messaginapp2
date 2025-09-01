@@ -36,7 +36,7 @@ export const addUser = async (req, res) => {
 	const myId = req.user.id;
 	const myUsername = req.user.username;
 	try {
-		console.log(username," checking", myUsername);
+		
 
 		if (username === myUsername) {
 			return res
