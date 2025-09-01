@@ -34,7 +34,16 @@ export const addUser = async (req, res) => {
 
 	const { username } = req.query;
 	const myId = req.user.id;
+	const myUsername = req.user.username;
 	try {
+		console.log(username," checking", myUsername);
+
+		if (username === myUsername) {
+			return res
+				.status(404)
+				.json({ message: "new contact and current user id is identical)" });
+		}
+
 		const result = await pool.query(
 			"SELECT id FROM users WHERE username = $1", 
 			[username]
@@ -55,6 +64,32 @@ export const addUser = async (req, res) => {
 		res.status(500).json({ message: "problem in finding user" });
 	}
 }
+export const deleteUser = async (req, res) => {
+	const { user } = req.query;
+	const myId = req.user.id;
+
+
+	try {
+		await pool.query(
+			"delete from contacts where (user_id = $1 and contact_id =$2)",
+			[myId, Number(user.id)]
+		);
+		await pool.query(
+			"DELETE FROM messages WHERE (sender_id = $1 AND receiver_id = $2) OR (sender_id = $2 AND receiver_id = $1)",
+			[myId, Number(user.id)]
+		);
+
+		
+		res.json({ success: true, contactId: Number(user.id) });
+	} catch (error) {
+		console.log("Error in add users:", error.message);
+		res.status(500).json({ message: "problem in finding user" });
+	}
+};
+
+
+
+
 
 export const signup = async (req, res) => {
 	const { fullName, email, password, username } = req.body;

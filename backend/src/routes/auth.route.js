@@ -1,5 +1,5 @@
 import express from "express";
-import { signup, login, logout,updateProfile, checkAuth, searchUser,addUser,initGoogleAuth, googleAuthCallback,editProfileData,getImages} from "../controllers/auth.controller.js";
+import { signup, login, logout,updateProfile, checkAuth, searchUser,addUser,initGoogleAuth, googleAuthCallback,editProfileData,getImages,deleteUser} from "../controllers/auth.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import passport from "passport";
 import pass from "../lib/passport.js";
@@ -24,5 +24,6 @@ router.get("/check", protectRoute, checkAuth);
 
 router.get("/usersearch", protectRoute, searchUser);
 router.get("/add-user", protectRoute, addUser);
+router.get("/delete-user", protectRoute, deleteUser);
 
 export default router;

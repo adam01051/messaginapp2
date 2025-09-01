@@ -3,6 +3,7 @@ import { axiosInstance } from "../lib/axios.js";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 
+
  
 
 const BASE_URL =
@@ -29,11 +30,23 @@ export const useAuthStore = create((set, get) => ({
 			});
 			set({ addResults: res.data });
 			toast.success("Contact successfully added");
-
 		} catch (error) {
 			console.error("Error in adding user", error);
 			set({ addResults: [] });
 			toast.error("User adding is failed");
+		}
+	},
+	deleteUser: async (user) => {
+		try {
+			const res = await axiosInstance.get("/auth/delete-user", {
+				params: { user },
+			});
+			set({ addResults: res.data });
+			toast.success("Contact successfully deleted");
+		} catch (error) {
+			console.error("Error in deleting user", error);
+			set({ addResults: [] });
+			toast.error("User deleting is failed");
 		}
 	},
 
@@ -56,8 +69,8 @@ export const useAuthStore = create((set, get) => ({
 			const res = await axiosInstance.get("/auth/check");
 
 			set({ authUser: res.data, profilePics: res.data.profilePics });
-	
-				get().connectSocket();
+
+			get().connectSocket();
 		} catch (error) {
 			console.log("Error in checkAuth:", error);
 			set({ authUser: null });
@@ -71,11 +84,9 @@ export const useAuthStore = create((set, get) => ({
 		try {
 			const res = await axiosInstance.post("/auth/signup", data);
 			set({ authUser: res.data });
-			
 
 			toast.success("Account created successfully");
 			get().connectSocket();
-
 		} catch (error) {
 			toast.error(error.response.data.message);
 		} finally {
@@ -88,13 +99,10 @@ export const useAuthStore = create((set, get) => ({
 		try {
 			const res = await axiosInstance.post("/auth/login", data);
 			set({ authUser: res.data });
-			
 
 			//getimmages(res.data.id)
 			const picsRes = await axiosInstance.get("/auth/images");
-			set({ profilePics: picsRes.data }); 
-		
-		
+			set({ profilePics: picsRes.data });
 
 			toast.success("Logged in successfully");
 

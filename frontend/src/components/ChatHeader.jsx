@@ -14,8 +14,8 @@ import "yet-another-react-lightbox/plugins/counter.css";
 
 
 const ChatHeader = () => {
-	const { selectedUser } = useChatStore();
-	const { onlineUsers, profilePics } = useAuthStore();
+	const { selectedUser,getUsers } = useChatStore();
+	const { onlineUsers, profilePics ,deleteUser} = useAuthStore();
 	const [userPics, setUserPics] = useState([]);
 	const [lightboxOpen, setLightboxOpen] = useState(false);
 
@@ -33,11 +33,14 @@ const ChatHeader = () => {
 		}
 	}, [profilePics, selectedUser]);
 
-	function closeModal() {
-		document.getElementById("my_modal_7").checked = false;
+	const deleteContact = async () => {
+		deleteUser(selectedUser);
+		await getUsers();
+
 	
-		
 	};
+	
+	
 	const slides = userPics.map((pic) => ({
 		src: pic.profile_url,
 	}));
@@ -187,7 +190,7 @@ const ChatHeader = () => {
 								</div>
 								<div className="flex justify-start">
 									
-									<button className="btn btn-sm btn-error ">Delete contact</button>
+									<button onClick={deleteContact} className="btn btn-sm btn-error ">Delete contact</button>
 								</div>
 							</div>
 						</div>

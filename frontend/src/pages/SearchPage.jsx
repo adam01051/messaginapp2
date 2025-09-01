@@ -10,7 +10,8 @@ const SearchPage = () => {
 		searchUser(username); // triggers API call and updates Zustand state
 	};
 
-    const handleAdd = () => {
+	const handleAdd = () => {
+		
         addUser(username);
     }
 	
