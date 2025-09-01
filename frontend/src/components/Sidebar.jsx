@@ -16,7 +16,7 @@ const Sidebar = () => {
 		getUsers();
 	}, [getUsers]);
 
-	console.log(users[0]);
+	
 	
 	const safeUsers = Array.isArray(users) ? users : [];
 	const filteredUsers = showOnlineOnly

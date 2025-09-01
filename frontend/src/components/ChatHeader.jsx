@@ -185,6 +185,10 @@ const ChatHeader = () => {
 										{selectedUser?.number || "No data"}
 									</p>
 								</div>
+								<div className="flex justify-start">
+									
+									<button className="btn btn-sm btn-error ">Delete contact</button>
+								</div>
 							</div>
 						</div>
 					</div>
