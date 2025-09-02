@@ -22,6 +22,11 @@ export const useChatStore = create((set, get) => ({
 				params: { username },
 			});
 			set({ addResults: res.data });
+			set((state) => ({
+				selectedUser: { ...state.selectedUser, is_contact: true },
+			}));
+	
+
 			toast.success("Contact successfully added");
 		} catch (error) {
 			console.error("Error in adding user", error);
@@ -31,12 +36,12 @@ export const useChatStore = create((set, get) => ({
 	},
 	deleteUser: async (user) => {
 		try {
-			const res = await axiosInstance.get("/messages/delete-user", {
+			  await axiosInstance.get("/messages/delete-user", {
 				params: { user },
 			});
 			set({ selectedUser: null });
 		    await get().getUsers();
-			set({ addResults: res.data });
+			
 			toast.success("Contact successfully deleted");
 		} catch (error) {
 			console.error("Error in deleting user", error);

@@ -14,7 +14,7 @@ import "yet-another-react-lightbox/plugins/counter.css";
 
 
 const ChatHeader = () => {
-	const { selectedUser, getUsers, setSelectedUser, deleteUser, addUser } =
+	const { selectedUser, getUsers, deleteUser, addUser } =
 		useChatStore();
 	const { onlineUsers, profilePics } = useAuthStore();
 	const [userPics, setUserPics] = useState([]);
@@ -35,23 +35,17 @@ const ChatHeader = () => {
 		}
 	}, [profilePics, selectedUser]);
 
-
-	const handleAdd =  async () => {
-		addUser(selectedUser.username);
-		setSelectedUser({
-			...selectedUser,
-			is_contact: true,
-		});
-
-		// Optionally refresh contact list from backend
-		await getUsers();
-		
+	const handleAdd = async () => {
+		await addUser(selectedUser.username); // wait for backend
+	
+		await getUsers(); // refresh contact list
 	};
 
 	const deleteContact = async () => {
 		deleteUser(selectedUser);
 		await getUsers();
 		
+		console.log(selectedUser);
 		
 	
 	};
@@ -125,7 +119,12 @@ const ChatHeader = () => {
 								>
 									Accept
 								</button>
-								<button className="btn btn-sm btn-error mx-3">Block</button>
+								<button
+									onClick={deleteContact}
+									className="btn btn-sm btn-error mx-3"
+								>
+									Block
+								</button>
 							</div>
 						</div>
 					) : (
