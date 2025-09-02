@@ -20,35 +20,10 @@ export const useAuthStore = create((set, get) => ({
 	onlineUsers: [],
 	socket: null,
 	searchResults: null,
-	addResults: null,
+
 	profilePics: null,
 
-	addUser: async (username) => {
-		try {
-			const res = await axiosInstance.get("/auth/add-user", {
-				params: { username },
-			});
-			set({ addResults: res.data });
-			toast.success("Contact successfully added");
-		} catch (error) {
-			console.error("Error in adding user", error);
-			set({ addResults: [] });
-			toast.error("User adding is failed");
-		}
-	},
-	deleteUser: async (user) => {
-		try {
-			const res = await axiosInstance.get("/auth/delete-user", {
-				params: { user },
-			});
-			set({ addResults: res.data });
-			toast.success("Contact successfully deleted");
-		} catch (error) {
-			console.error("Error in deleting user", error);
-			set({ addResults: [] });
-			toast.error("User deleting is failed");
-		}
-	},
+
 
 	searchUser: async (username) => {
 		try {

@@ -14,14 +14,16 @@ import "yet-another-react-lightbox/plugins/counter.css";
 
 
 const ChatHeader = () => {
-	const { selectedUser,getUsers } = useChatStore();
-	const { onlineUsers, profilePics ,deleteUser} = useAuthStore();
+	const { selectedUser, getUsers, setSelectedUser, deleteUser, addUser } =
+		useChatStore();
+	const { onlineUsers, profilePics } = useAuthStore();
 	const [userPics, setUserPics] = useState([]);
 	const [lightboxOpen, setLightboxOpen] = useState(false);
 
 
 	useEffect(() => {
 		
+
 	
 		if (profilePics && selectedUser) {
 
@@ -33,10 +35,24 @@ const ChatHeader = () => {
 		}
 	}, [profilePics, selectedUser]);
 
+
+	const handleAdd =  async () => {
+		addUser(selectedUser.username);
+		setSelectedUser({
+			...selectedUser,
+			is_contact: true,
+		});
+
+		// Optionally refresh contact list from backend
+		await getUsers();
+		
+	};
+
 	const deleteContact = async () => {
 		deleteUser(selectedUser);
 		await getUsers();
-
+		
+		
 	
 	};
 	
@@ -103,7 +119,12 @@ const ChatHeader = () => {
 								New message request – this user is not in your contacts.
 							</span>
 							<div className="flex justify-self-center">
-								<button className="btn btn-sm btn-success mx-3 ">Accept</button>
+								<button
+									onClick={handleAdd}
+									className="btn btn-sm btn-success mx-3 "
+								>
+									Accept
+								</button>
 								<button className="btn btn-sm btn-error mx-3">Block</button>
 							</div>
 						</div>
@@ -189,8 +210,12 @@ const ChatHeader = () => {
 									</p>
 								</div>
 								<div className="flex justify-start">
-									
-									<button onClick={deleteContact} className="btn btn-sm btn-error ">Delete contact</button>
+									<button
+										onClick={deleteContact}
+										className="btn btn-sm btn-error "
+									>
+										Delete contact
+									</button>
 								</div>
 							</div>
 						</div>

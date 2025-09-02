@@ -1,13 +1,16 @@
 import React, { useState,useEffect } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { Check } from "lucide-react";
+import { useChatStore } from "../store/useChatStore";
 
 const SearchPage = () => {
 	const [username, setUsername] = useState("");
-    const { searchUser, searchResults, addUser,addResults,profilePics,authUser} = useAuthStore();
+	const { searchUser, searchResults, addResults, profilePics, authUser } = useAuthStore();
+	
+	const { addUser } = useChatStore();
 	const [userPics, setUserPics] = useState([]);
 	const handleSearch = () => {
-		searchUser(username); // triggers API call and updates Zustand state
+		searchUser(username); 
 	};
 	useEffect(() => {
 		if (profilePics && authUser) {

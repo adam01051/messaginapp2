@@ -10,10 +10,40 @@ export const useChatStore = create((set, get) => ({
 	users: [],
 	onlineUsers: {},
 	selectedUser: null,
+
 	isUsersLoading: false,
 	isMessagesLoading: false,
 	isNewMessage: null,
+	addResults: null,
 
+	addUser: async (username) => {
+		try {
+			const res = await axiosInstance.get("/messages/add-user", {
+				params: { username },
+			});
+			set({ addResults: res.data });
+			toast.success("Contact successfully added");
+		} catch (error) {
+			console.error("Error in adding user", error);
+			set({ addResults: [] });
+			toast.error("User adding is failed");
+		}
+	},
+	deleteUser: async (user) => {
+		try {
+			const res = await axiosInstance.get("/messages/delete-user", {
+				params: { user },
+			});
+			set({ selectedUser: null });
+		    await get().getUsers();
+			set({ addResults: res.data });
+			toast.success("Contact successfully deleted");
+		} catch (error) {
+			console.error("Error in deleting user", error);
+			set({ addResults: [] });
+			toast.error("User deleting is failed");
+		}
+	},
 
 	getUsers: async () => {
 		set({ isUsersLoading: true });
@@ -21,7 +51,6 @@ export const useChatStore = create((set, get) => ({
 			const res = await axiosInstance.get("/messages/user");
 
 			set({ users: Array.isArray(res.data) ? res.data : [] });
-
 		} catch (error) {
 			toast.error(error.response.data.message);
 			console.log("there was  problem getting users from database");
@@ -82,19 +111,17 @@ export const useChatStore = create((set, get) => ({
 			});
 		});
 	},
-	
+
 	unsubscribeFromMessages: () => {
 		const socket = useAuthStore.getState().socket;
 		socket.off("newMessage");
-		
 	},
-	
+
 	closeChat: () => {
 		set({ selectedUser: null });
 	},
 	//todo: optimize this one later
 	setSelectedUser: (user) => {
-		
 		const { selectedUser } = get();
 		// If same user, do nothing
 		if (selectedUser?.id === user.id) return;
