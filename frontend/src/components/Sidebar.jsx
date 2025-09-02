@@ -55,7 +55,7 @@ const Sidebar = () => {
               w-full p-3 flex items-center gap-3
               hover:bg-base-300 transition-colors
               ${
-								selectedUser?.id.toString() === user.id.toString()
+								selectedUser?.id?.toString() === user.id.toString()
 									? "bg-base-300 ring-1 ring-base-300"
 									: ""
 							}

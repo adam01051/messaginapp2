@@ -79,7 +79,7 @@ export const searchUser = async (req, res) => {
 	const { username } = req.query; // ✅ GET requests should use query
 	try {
 		const result = await pool.query(
-			"SELECT * FROM users WHERE username ILIKE $1", // ILIKE for case-insensitive search
+			"SELECT id,name,username,email  FROM users WHERE username ILIKE $1", // ILIKE for case-insensitive search
 			[username] // % for partial matches
 		);
 

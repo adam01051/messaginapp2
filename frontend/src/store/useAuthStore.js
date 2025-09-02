@@ -30,7 +30,7 @@ export const useAuthStore = create((set, get) => ({
 			const res = await axiosInstance.get("/auth/usersearch", {
 				params: { username }, // ✅ use params for GET
 			});
-			console.log(res.data, "search dasdassda form");
+		
 			set({ searchResults: res.data }); // ✅ update search results in store
 		} catch (error) {
 			console.error("Error searching user", error);

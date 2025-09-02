@@ -31,7 +31,8 @@ export const useChatStore = create((set, get) => ({
 		} catch (error) {
 			console.error("Error in adding user", error);
 			set({ addResults: [] });
-			toast.error("User adding is failed");
+			const message = error.response?.data?.message || "Adding user failed";
+			toast.error(message);
 		}
 	},
 	deleteUser: async (user) => {

@@ -5,30 +5,31 @@ import { useChatStore } from "../store/useChatStore";
 
 const SearchPage = () => {
 	const [username, setUsername] = useState("");
-	const { searchUser, searchResults, addResults, profilePics, authUser } = useAuthStore();
+	const { searchUser, searchResults, addResults, profilePics } = useAuthStore();
 	
 	const { addUser } = useChatStore();
 	const [userPics, setUserPics] = useState([]);
 	const handleSearch = () => {
 		searchUser(username); 
+
+		
 	};
 	useEffect(() => {
-		if (profilePics && authUser) {
-			const pics = profilePics.filter((pic) => pic.user_ref === authUser.id);
-
+		if (profilePics && searchResults && searchResults.length > 0) {
+			const pics = profilePics.filter(
+				(pic) => pic.user_ref === searchResults[0].id
+			);
 			setUserPics(pics);
+		} else {
+			setUserPics([]); // reset if no search results
 		}
-	}, [authUser, profilePics]);
-
+	}, [searchResults, profilePics]);
 	const handleAdd = () => {
 		
         addUser(username);
     }
 	
-	useEffect(() => {
-		console.log("Updated search results:", searchResults);
-	}, [searchResults]);
-    	
+	
 	useEffect(() => {
 		if (addResults?.success) {
 			console.log("New contact ID:", addResults.contactId);
@@ -78,10 +79,9 @@ const SearchPage = () => {
 														<div className="mask mask-squircle h-12 w-12">
 															<img
 																src={
-																	
-																	(userPics.length > 0
-																		? userPics[0].profile_url
-																		: "/avatar.png")
+																	userPics.find(
+																		(pic) => pic.user_ref === user.id
+																	)?.profile_url || "/avatar.png"
 																}
 																alt={user.name}
 															/>

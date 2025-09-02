@@ -69,8 +69,8 @@ export const addUser = async (req, res) => {
 
 		if (username === myUsername) {
 			return res
-				.status(404)
-				.json({ message: "new contact and current user id is identical)" });
+				.status(400)
+				.json({ message: "You cannot add yourself as a contact" });
 		}
 
 		const result = await pool.query(
@@ -82,14 +82,25 @@ export const addUser = async (req, res) => {
 				if (!newContactID) {
 					return res.status(404).json({ message: "User not found" });
 				}
-		const result2 = await pool.query("insert into contacts (user_id, contact_id) values ($1,$2) returning *", [myId, newContactID]);
+		try {
+			const result2 = await pool.query(
+				"insert into contacts (user_id, contact_id) values ($1,$2) returning *",
+				[myId, newContactID]
+			);
 
+
+	
+		} catch (error) {
+			res.status(400).json({ message: "User is already in your contact list" });
+		
+		}
+		
 
 		res.json({ success: true, contactId: newContactID });
 
 	} catch (error) {
 		console.log("Error in add users:", error.message);
-		res.status(500).json({ message: "problem in finding user" });
+		
 	}
 }
 
@@ -108,7 +119,7 @@ export const deleteUser = async (req, res) => {
 			"DELETE FROM messages WHERE (sender_id = $1 AND receiver_id = $2) OR (sender_id = $2 AND receiver_id = $1)",
 			[myId, Number(user.id)]
 		);
-		
+
 	
 		
 	
