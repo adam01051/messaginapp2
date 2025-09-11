@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import pool from "./lib/postgres.js";
+
 import path from "path";
 import passport from "passport";
 import session from "express-session";

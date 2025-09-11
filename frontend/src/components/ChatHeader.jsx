@@ -2,7 +2,6 @@ import { X, User, Mail,Contact } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
 import {  useEffect ,useState} from "react";
-
 import "react-medium-image-zoom/dist/styles.css";
 
 import Lightbox from "yet-another-react-lightbox";
@@ -231,6 +230,14 @@ const ChatHeader = () => {
 						close={() => setLightboxOpen(false)}
 						slides={slides}
 						plugins={[Counter]}
+						toolbar={{
+							buttons: [
+								<button key="my-button" type="button" className="yarl__button">
+									Button
+								</button>,
+								"close",
+							],
+						}}
 					/>
 				)}
 			</div>
