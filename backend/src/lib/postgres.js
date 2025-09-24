@@ -5,21 +5,21 @@ import pkg from "pg";
 const { Pool } = pkg;
 
 export const pool = new Pool({
-	user: process.env.PG_NAME,
-	host: process.env.PG_HOST,
-	database: process.env.PG_DATABASE,
-	password: process.env.PG_PASSWORD,
-	port: process.env.PG_PORT,
+	connectionString: process.env.DATABASE_URL,
+	ssl:
+		process.env.NODE_ENV === "production"
+			? { rejectUnauthorized: false }
+			: false,
 });
-// Optional: Test the connection once
+
 pool
 	.connect()
 	.then((client) => {
-		console.log("Postgres is connected");
-		client.release(); // release back to pool
+		console.log("✅ Postgres is connected");
+		client.release();
 	})
 	.catch((error) => {
-		console.log("Postgres connection error:", error.message);
+		console.error("❌ Postgres connection error:", error.message);
 	});
 
 export default pool;
