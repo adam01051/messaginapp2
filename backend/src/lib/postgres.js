@@ -6,20 +6,18 @@ const { Pool } = pkg;
 
 export const pool = new Pool({
 	connectionString: process.env.DATABASE_URL,
-	ssl:
-		process.env.NODE_ENV === "production"
-			? { rejectUnauthorized: false }
-			: false,
+	ssl: { rejectUnauthorized: false }, // required for Render
 });
 
+// Test the connection
 pool
 	.connect()
 	.then((client) => {
 		console.log("✅ Postgres is connected");
 		client.release();
 	})
-	.catch((error) => {
-		console.error("❌ Postgres connection error:", error.message);
+	.catch((err) => {
+		console.error("❌ Postgres connection error:", err.message);
 	});
 
 export default pool;
