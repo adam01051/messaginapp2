@@ -6,15 +6,12 @@ import pool from "../lib/postgres.js";
 import express from "express";
 
 
-
 export const initGoogleAuth = passport.authenticate("google", {
 	scope: ["email", "profile"],
 	session: false,
 });
+  
 
-
-
-// Google Callback Handler
 export const googleAuthCallback = (req, res, next) => {
 	passport.authenticate("google", { session: false }, (err, user, info) => {
 		if (err || !user) {
@@ -22,14 +19,26 @@ export const googleAuthCallback = (req, res, next) => {
 				"Authentication error:",
 				err || info?.message || "No user found"
 			);
-			return res.redirect("http://localhost:5173?error=auth_failed");
+
+			// Redirect based on environment
+			return res.redirect(
+				process.env.NODE_ENV === "production"
+					? "https://threerd-messagin-application.onrender.com?error=auth_failed"
+					: "http://localhost:5173?error=auth_failed"
+			);
 		}
-		generateToken(user.id, res); // Sets JWT cookie
-		res.redirect("http://localhost:5173");
+
+		// Set JWT cookie
+		generateToken(user.id, res);
+
+		// Redirect after successful login
+		return res.redirect(
+			process.env.NODE_ENV === "production"
+				? "https://threerd-messagin-application.onrender.com"
+				: "http://localhost:5173"
+		);
 	})(req, res, next);
 };
-
-
 
 
 

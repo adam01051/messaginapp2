@@ -6,6 +6,7 @@ import pass from "../lib/passport.js";
 const router = express.Router();
 import { generateToken } from "../lib/utils.js";
 
+// Start Google auth
 
 router.get("/google", initGoogleAuth);
 router.get("/google/callback", googleAuthCallback);
