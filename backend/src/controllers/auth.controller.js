@@ -181,11 +181,6 @@ export const updateProfile = async (req, res) => {
 
 		const uploadResponse = await cloudinary.uploader.upload(profilePic);
 
-		/*const updatedUser = await pool.query(
-			`UPDATE users SET profileimage = $1 WHERE id = $2 RETURNING id, name AS fullName, email, username, profileimage`,
-			[uploadResponse.secure_url, userId]
-		);*/ //will change into adding  profile picture on the seperte table so that user can have multiple profile pics
-		
 		const allPics= await pool.query(
 			"insert into profile_pics (profile_url,user_ref) values ($1,$2)  returning *",
 			[uploadResponse.secure_url,userId]

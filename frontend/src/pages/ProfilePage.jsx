@@ -34,14 +34,23 @@ const ProfilePage = () => {
 		
 	}, [authUser, profilePics]);
 
-
 	const [prototype1, setPrototype1] = useState({
-		id: authUser.id,
-		name: authUser.name,
-		username: authUser.username,
-		number: authUser.number,
-		
+		id: "",
+		name: "",
+		username: "",
+		number: "",
 	});
+
+	useEffect(() => {
+		if (authUser) {
+			setPrototype1({
+				id: authUser.id,
+				name: authUser.name || "",
+				username: authUser.username || "",
+				number: authUser.number || "",
+			});
+		}
+	}, [authUser]);
 
 	const handleProfileData = async () => {
 		await editProfileData(prototype1);
