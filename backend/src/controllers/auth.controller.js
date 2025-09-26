@@ -34,7 +34,7 @@ export const googleAuthCallback = (req, res, next) => {
 		// Redirect after successful login
 		return res.redirect(
 			process.env.NODE_ENV === "production"
-				? "https://threerd-messagin-application.onrender.com"
+				? "https://threerd-messagin-application.onrender.com/api"
 				: "http://localhost:5173"
 		);
 	})(req, res, next);
