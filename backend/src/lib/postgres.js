@@ -4,22 +4,15 @@ config();
 import pkg from "pg";
 const { Pool } = pkg;
 
-const isProduction = process.env.NODE_ENV === "production";
 
-const pool = new Pool(
-	isProduction
-		? {
-				connectionString: process.env.DATABASE_URL,
-				ssl: { rejectUnauthorized: false }, 
-		  }
-		: {
-				user: process.env.PG_NAME || "adam",
-				password: process.env.PG_PASSWORD || "password",
-				host: process.env.PG_HOST || "localhost",
-				port: process.env.PG_PORT || 5432,
-				database: process.env.PG_DATABASE || "messaging_app2",
-		  }
-);
+
+const pool = new Pool({
+	user: process.env.PG_NAME || "adam",
+	password: process.env.PG_PASSWORD || "password",
+	host: process.env.PG_HOST || "localhost",
+	port: process.env.PG_PORT || 5432,
+	database: process.env.PG_DATABASE || "messaging_app2",
+});
 
 
 pool

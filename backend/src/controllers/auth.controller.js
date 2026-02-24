@@ -17,7 +17,7 @@ export const googleAuthCallback = (req, res, next) => {
 				err || info?.message || "No user found"
 			);
 
-			// Redirect based on environment
+			
 			return res.redirect(
 				process.env.NODE_ENV === "production"
 					? "https://threerd-messagin-application.onrender.com?error=auth_failed"
@@ -25,10 +25,10 @@ export const googleAuthCallback = (req, res, next) => {
 			);
 		}
 
-		// Set JWT cookie
+		
 		generateToken(user.id, res);
 
-		// Redirect after successful login
+	
 		return res.redirect(
 			process.env.NODE_ENV === "production"
 				? "https://threerd-messagin-application.onrender.com"
@@ -69,7 +69,7 @@ export const signup = async (req, res) => {
 		const newUser = result.rows[0];
 	
 	if (newUser) {
-			// generate jwt token here
+		
 			const r1 = generateToken(newUser.id, res);
 
 			res.status(201).json(newUser);
@@ -82,15 +82,15 @@ export const signup = async (req, res) => {
 	}
 };
 export const searchUser = async (req, res) => {
-	const { username } = req.query; // ✅ GET requests should use query
+	const { username } = req.query;
 	try {
 		const result = await pool.query(
-			"SELECT id,name,username,email  FROM users WHERE username ILIKE $1", // ILIKE for case-insensitive search
-			[username] // % for partial matches
+			"SELECT id,name,username,email  FROM users WHERE username ILIKE $1", 
+			[username]
 		);
 
 	
-		res.json(result.rows); // ✅ return results to frontend
+		res.json(result.rows);
 	} catch (error) {
 		console.log("Error in searchUser:", error.message);
 		res.status(500).json({ message: "problem in finding user" });

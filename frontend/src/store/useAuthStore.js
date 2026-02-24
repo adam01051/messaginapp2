@@ -27,13 +27,13 @@ export const useAuthStore = create((set, get) => ({
 	searchUser: async (username) => {
 		try {
 			const res = await axiosInstance.get("/auth/usersearch", {
-				params: { username }, // ✅ use params for GET
+				params: { username },
 			});
 		
-			set({ searchResults: res.data }); // ✅ update search results in store
+			set({ searchResults: res.data }); 
 		} catch (error) {
 			console.error("Error searching user", error);
-			set({ searchResults: [] }); // reset results on error
+			set({ searchResults: [] }); 
 			toast.error("User search failed");
 		}
 	},
