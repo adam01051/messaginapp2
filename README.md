@@ -206,13 +206,26 @@ This will install dependencies, build the frontend, and serve it from the backen
 You can include interface screenshots here.
 
 Login Page
-(Add image)
+<img width="1440" height="822" alt="Screenshot 2026-02-25 at 1 13 56 AM" src="https://github.com/user-attachments/assets/81c83aaa-8151-49be-962f-2808894d9198" />
+
+Sign up page
+<img width="1440" height="822" alt="Screenshot 2026-02-25 at 1 14 03 AM" src="https://github.com/user-attachments/assets/ca41b0e0-d6b3-4362-adf8-7133567c0835" />
 
 Chat Interface
-(Add image)
+<img width="1440" height="822" alt="Screenshot 2026-02-25 at 1 15 34 AM" src="https://github.com/user-attachments/assets/b8d95360-73f0-4e26-8509-d9a6d2e2837c" />
 
-Mobile View
-(Add image)
+
+
+Profile page
+<img width="1440" height="822" alt="Screenshot 2026-02-25 at 1 18 46 AM" src="https://github.com/user-attachments/assets/764fc8f4-a4a9-4a4e-a084-083009dc697d" />
+
+Search page
+<img width="1440" height="822" alt="Screenshot 2026-02-25 at 1 18 53 AM" src="https://github.com/user-attachments/assets/710b7f0e-e9f8-462f-bc46-0fa0f2e8f696" />
+
+
+
+
+
 
 ---
 
