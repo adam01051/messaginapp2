@@ -4,21 +4,13 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 
 import path from "path";
-import passport from "passport";
-import session from "express-session";
-
- 
 
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
 import { app, server } from "./lib/socket.js";
+dotenv.config();
 
-if (process.env.NODE_ENV !== "production") {
-	import("dotenv").then((dotenv) => dotenv.config());
-}
-  
-
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5001;
 const __dirname = path.resolve();
 
 
@@ -27,17 +19,7 @@ const __dirname = path.resolve();
 app.use(express.json({ limit: "50mb" }));
 app.use(cookieParser());
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
-const allowedOrigins = [
-	process.env.LOCAL_URL,
-	process.env.NOT_LOCAL_URL, // ✅ replace with actual frontend URL
-];
 
-app.use(
-	cors({
-		origin: allowedOrigins,
-		credentials: true,
-	})
-);
 
 app.use(
 	cors({
@@ -45,19 +27,6 @@ app.use(
 		credentials: true,
 	})
 );
-// **ADD session middleware here**
-app.use(
-	session({
-	  secret: process.env.SESSION_SECRET || "your-secret-key", // put secret in .env
-	  resave: false,
-	  saveUninitialized: false,
-	  cookie: { secure: false }, // set to true if using HTTPS
-	})
-  );
-  
-  // **INITIALIZE passport and passport session**
-  app.use(passport.initialize());
-  app.use(passport.session());
 
 
 

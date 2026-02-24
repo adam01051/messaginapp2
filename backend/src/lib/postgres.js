@@ -10,26 +10,26 @@ const pool = new Pool(
 	isProduction
 		? {
 				connectionString: process.env.DATABASE_URL,
-				ssl: { rejectUnauthorized: false }, // Render / production
+				ssl: { rejectUnauthorized: false }, 
 		  }
 		: {
-				user: process.env.PG_NAME || "postgres",
+				user: process.env.PG_NAME || "adam",
 				password: process.env.PG_PASSWORD || "password",
 				host: process.env.PG_HOST || "localhost",
 				port: process.env.PG_PORT || 5432,
-				database: process.env.PG_DATABASE || "my_local_db",
+				database: process.env.PG_DATABASE || "messaging_app2",
 		  }
 );
 
-// Test the connection
+
 pool
 	.connect()
 	.then((client) => {
-		console.log("✅ Postgres is connected");
+		console.log(" Postgres is connected");
 		client.release();
 	})
 	.catch((err) => {
-		console.error("❌ Postgres connection error:", err.message);
+		console.error(" Postgres connection error:", err.message);
 	});
 
 export default pool;

@@ -1,15 +1,11 @@
 import express from "express";
-import { signup, login, logout,updateProfile, checkAuth, searchUser,initGoogleAuth, googleAuthCallback,editProfileData,getImages} from "../controllers/auth.controller.js";
+import { signup, login, logout,updateProfile, checkAuth, searchUser,editProfileData,getImages} from "../controllers/auth.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
-import passport from "passport";
-import pass from "../lib/passport.js";
+
 const router = express.Router();
-import { generateToken } from "../lib/utils.js";
+
 
 // Start Google auth
-
-router.get("/google", initGoogleAuth);
-router.get("/google/callback", googleAuthCallback);
 
 
 router.post("/login", login);
