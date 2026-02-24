@@ -1,7 +1,4 @@
-//  building this  for  capstone  device  will  write  desc  later
-# messaginapp2
+
+# messaginapp2 use develop branch
 
 
-{
- 
-}
