@@ -11,7 +11,8 @@ export const getMessages: RequestHandler = async (req, res) => {
 export const sendMessage: RequestHandler = async (req, res) => {
   const { userId } = req.validated?.params as { userId: number };
   const { text, image } = req.validated?.body as { text: string; image?: string | null };
-  const message = await service.sendMessage(req.user!.id, userId, text, image);
+  const { message, senderContact } = await service.sendMessage(req.user!.id, userId, text, image);
+  emitToUser(userId, "conversationUpdated", { contact: senderContact });
   emitToUser(userId, "newMessage", message);
   res.status(201).json(message);
 };

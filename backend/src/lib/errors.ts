@@ -41,6 +41,10 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, _next) => {
       status = 404;
       message = "Record not found";
       code = "NOT_FOUND";
+    } else if (error.code === "P2021" || error.code === "P2022") {
+      status = 503;
+      message = "Database schema is not ready";
+      code = "DATABASE_SCHEMA_OUTDATED";
     }
   }
 

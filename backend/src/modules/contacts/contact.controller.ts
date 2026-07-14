@@ -6,19 +6,18 @@ export const list: RequestHandler = async (req, res) => res.json(await service.l
 
 export const add: RequestHandler = async (req, res) => {
   const { username } = req.validated?.body as { username: string };
-  const { recipientId, recipientContact, created, ...response } = await service.addContact(
+  const result = await service.addContact(
     req.user!.id,
     req.user!.username,
     username,
   );
-  if (created) emitToUser(recipientId, "contactAdded", { contact: recipientContact });
-  res.status(201).json(response);
+  res.status(201).json({ success: result.success, contactId: result.contactId, contact: result.contact });
 };
 
 export const remove: RequestHandler = async (req, res) => {
   const { contactId } = req.validated?.params as { contactId: number };
-  const response = await service.deleteContact(req.user!.id, contactId);
-  emitToUser(req.user!.id, "contactRemoved", { contactId });
-  emitToUser(contactId, "contactRemoved", { contactId: req.user!.id });
+  const { peerContact, ...response } = await service.deleteContact(req.user!.id, contactId);
+  emitToUser(req.user!.id, "conversationReset", { userId: contactId, contact: null });
+  emitToUser(contactId, "conversationReset", { userId: req.user!.id, contact: peerContact });
   res.json(response);
 };

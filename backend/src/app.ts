@@ -11,6 +11,7 @@ import { healthRouter } from "./health.routes.js";
 import { errorHandler, notFoundHandler } from "./lib/errors.js";
 import { logger } from "./lib/logger.js";
 import { authRouter } from "./modules/auth/auth.routes.js";
+import { blockRouter } from "./modules/blocks/block.routes.js";
 import { contactRouter } from "./modules/contacts/contact.routes.js";
 import { messageRouter } from "./modules/messages/message.routes.js";
 
@@ -38,6 +39,7 @@ export const createApp = () => {
 
   app.use("/health", healthRouter);
   app.use("/api/auth", authRouter);
+  app.use("/api/blocks", blockRouter);
   app.use("/api/contacts", contactRouter);
   app.use("/api/messages", messageRouter);
 

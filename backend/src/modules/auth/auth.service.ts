@@ -40,8 +40,13 @@ export const getSessionUser = async (userId: number) => {
 };
 
 export const searchUsers = async (userId: number, username: string, limit: number) => {
+  const blocks = await prisma.blockedUser.findMany({
+    where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
+    select: { blockerId: true, blockedId: true },
+  });
+  const blockedIds = blocks.map((block) => (block.blockerId === userId ? block.blockedId : block.blockerId));
   const users = await prisma.user.findMany({
-    where: { id: { not: userId }, username: { contains: username, mode: "insensitive" } },
+    where: { id: { notIn: [userId, ...blockedIds] }, username: { contains: username, mode: "insensitive" } },
     take: limit,
     orderBy: { username: "asc" },
     include: { profilePics: { take: 1, orderBy: { id: "desc" } } },

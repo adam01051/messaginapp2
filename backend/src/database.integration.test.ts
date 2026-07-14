@@ -6,6 +6,7 @@ import { createApp } from "./app.js";
 import { signToken } from "./lib/jwt.js";
 import { prisma } from "./lib/prisma.js";
 import { getAuthUser } from "./modules/auth/auth.service.js";
+import { blockUser, listBlockedUsers, unblockUser } from "./modules/blocks/block.service.js";
 import { addContact, deleteContact, listContacts } from "./modules/contacts/contact.service.js";
 import { getMessages } from "./modules/messages/message.service.js";
 import { closeSocket, initializeSocket } from "./realtime/socket.js";
@@ -35,6 +36,7 @@ databaseSuite("PostgreSQL integration", () => {
   });
 
   beforeEach(async () => {
+    await prisma.blockedUser.deleteMany();
     await prisma.message.deleteMany();
     await prisma.contact.deleteMany();
     await prisma.profilePic.deleteMany();
@@ -67,7 +69,7 @@ databaseSuite("PostgreSQL integration", () => {
     });
   });
 
-  it("creates mutual contacts idempotently and reconstructs both offline sidebars", async () => {
+  it("creates one-way contacts idempotently without changing the other user's sidebar", async () => {
     const [owner, contact] = await Promise.all([
       prisma.user.create({ data: { name: "Ada", username: "ada", email: "ada@example.com", passwordHash: "hash" } }),
       prisma.user.create({
@@ -77,9 +79,37 @@ databaseSuite("PostgreSQL integration", () => {
 
     await expect(addContact(owner.id, owner.username, contact.username)).resolves.toMatchObject({ created: true });
     await expect(addContact(owner.id, owner.username, contact.username)).resolves.toMatchObject({ created: false });
-    expect(await prisma.contact.count()).toBe(2);
+    expect(await prisma.contact.count()).toBe(1);
     expect(await listContacts(owner.id)).toEqual([expect.objectContaining({ id: contact.id, is_contact: true })]);
-    expect(await listContacts(contact.id)).toEqual([expect.objectContaining({ id: owner.id, is_contact: true })]);
+    expect(await listContacts(contact.id)).toEqual([]);
+  });
+
+  it("combines contacts and requests, preserves request activity on accept, and sorts empty contacts by name", async () => {
+    const [owner, requestSender, alpha, zed] = await Promise.all([
+      prisma.user.create({ data: { name: "Owner", username: "owner", email: "owner@example.com", passwordHash: "hash" } }),
+      prisma.user.create({ data: { name: "Requester", username: "requester", email: "requester@example.com", passwordHash: "hash" } }),
+      prisma.user.create({ data: { name: "Alpha", username: "alpha", email: "alpha@example.com", passwordHash: "hash" } }),
+      prisma.user.create({ data: { name: "Zed", username: "zed", email: "zed@example.com", passwordHash: "hash" } }),
+    ]);
+    await prisma.contact.createMany({
+      data: [{ userId: owner.id, contactId: zed.id }, { userId: owner.id, contactId: alpha.id }],
+    });
+    const message = await prisma.message.create({
+      data: { senderId: requestSender.id, receiverId: owner.id, content: "request" },
+    });
+
+    const beforeAccept = await listContacts(owner.id);
+    expect(beforeAccept.map((user) => user.id)).toEqual([requestSender.id, alpha.id, zed.id]);
+    expect(beforeAccept[0]).toMatchObject({ is_contact: false, last_message_time: message.createdAt.toISOString() });
+
+    await addContact(owner.id, owner.username, requestSender.username);
+    const afterAccept = await listContacts(owner.id);
+    expect(afterAccept).toHaveLength(3);
+    expect(afterAccept[0]).toMatchObject({
+      id: requestSender.id,
+      is_contact: true,
+      last_message_time: message.createdAt.toISOString(),
+    });
   });
 
   it("returns scoped profile-picture history and the latest contact avatar", async () => {
@@ -110,18 +140,34 @@ databaseSuite("PostgreSQL integration", () => {
     });
   });
 
-  it("preserves messages when a contact is removed", async () => {
+  it("deletes shared messages while preserving the peer's independent contact", async () => {
     const [sender, receiver] = await Promise.all([
       prisma.user.create({ data: { name: "Ada", username: "ada", email: "ada@example.com", passwordHash: "hash" } }),
       prisma.user.create({ data: { name: "Grace", username: "grace", email: "grace@example.com", passwordHash: "hash" } }),
     ]);
-    await prisma.contact.create({ data: { userId: sender.id, contactId: receiver.id } });
+    await prisma.contact.createMany({
+      data: [{ userId: sender.id, contactId: receiver.id }, { userId: receiver.id, contactId: sender.id }],
+    });
     await prisma.message.create({ data: { senderId: sender.id, receiverId: receiver.id, content: "hello" } });
 
     await deleteContact(sender.id, receiver.id);
 
-    expect(await prisma.contact.count()).toBe(0);
-    expect(await prisma.message.count()).toBe(1);
+    expect(await prisma.contact.count()).toBe(1);
+    expect(await prisma.message.count()).toBe(0);
+    expect(await listContacts(receiver.id)).toEqual([expect.objectContaining({ id: sender.id, is_contact: true })]);
+  });
+
+  it("dismisses an unaccepted inbound message request", async () => {
+    const [sender, receiver] = await Promise.all([
+      prisma.user.create({ data: { name: "Ada", username: "ada", email: "ada@example.com", passwordHash: "hash" } }),
+      prisma.user.create({ data: { name: "Grace", username: "grace", email: "grace@example.com", passwordHash: "hash" } }),
+    ]);
+    await prisma.message.create({ data: { senderId: sender.id, receiverId: receiver.id, content: "hello" } });
+
+    await deleteContact(receiver.id, sender.id);
+
+    expect(await prisma.message.count()).toBe(0);
+    expect(await listContacts(receiver.id)).toEqual([]);
   });
 
   it("returns the newest page in chronological display order", async () => {
@@ -177,7 +223,7 @@ databaseSuite("PostgreSQL integration", () => {
     expect(added.status).toBe(201);
     expect(added.body.contactId).toBe(graceSignup.body.id);
     expect(added.body.contact).toMatchObject({ id: graceSignup.body.id, is_contact: true });
-    expect(await prisma.contact.count()).toBe(2);
+    expect(await prisma.contact.count()).toBe(1);
 
     const sent = await ada.post(`/api/messages/send/${graceSignup.body.id}`).send({ text: "hello" });
     expect(sent.status).toBe(201);
@@ -193,7 +239,7 @@ databaseSuite("PostgreSQL integration", () => {
 
     const removed = await ada.delete(`/api/contacts/${graceSignup.body.id}`);
     expect(removed.status).toBe(200);
-    expect(await prisma.message.count()).toBe(1);
+    expect(await prisma.message.count()).toBe(0);
 
     const logout = await ada.post("/api/auth/logout");
     expect(logout.status).toBe(200);
@@ -204,7 +250,70 @@ databaseSuite("PostgreSQL integration", () => {
     expect((await ada.get("/api/auth/check")).status).toBe(200);
   });
 
-  it("publishes mutual contact changes to every recipient socket and preserves offline state", async () => {
+  it("persists owner-managed blocks and prevents interaction in both directions until unblock", async () => {
+    const app = createApp();
+    const [ada, grace] = await Promise.all([
+      prisma.user.create({ data: { name: "Ada", username: "ada", email: "ada@example.com", passwordHash: "hash" } }),
+      prisma.user.create({ data: { name: "Grace", username: "grace", email: "grace@example.com", passwordHash: "hash" } }),
+    ]);
+    await prisma.contact.createMany({
+      data: [{ userId: ada.id, contactId: grace.id }, { userId: grace.id, contactId: ada.id }],
+    });
+    await prisma.message.create({ data: { senderId: ada.id, receiverId: grace.id, content: "hello" } });
+
+    const blocked = await request(app)
+      .post(`/api/blocks/${grace.id}`)
+      .set("Cookie", `jwt=${signToken(ada.id)}`);
+    expect(blocked.status).toBe(201);
+    expect(blocked.body.blockedUser).toMatchObject({ id: grace.id, username: grace.username });
+    expect((await listBlockedUsers(ada.id))).toEqual([expect.objectContaining({ id: grace.id })]);
+    expect(await prisma.contact.count()).toBe(0);
+    expect(await prisma.message.count()).toBe(0);
+
+    for (const [senderId, receiverId] of [[ada.id, grace.id], [grace.id, ada.id]]) {
+      const sent = await request(app)
+        .post(`/api/messages/send/${receiverId}`)
+        .set("Cookie", `jwt=${signToken(senderId)}`)
+        .send({ text: "blocked" });
+      expect(sent.status).toBe(403);
+      expect(sent.body.code).toBe("USER_BLOCKED");
+    }
+    expect(
+      (await request(app).get(`/api/messages/${ada.id}`).set("Cookie", `jwt=${signToken(grace.id)}`)).status,
+    ).toBe(403);
+    expect(
+      (
+        await request(app)
+          .post("/api/contacts")
+          .set("Cookie", `jwt=${signToken(grace.id)}`)
+          .send({ username: ada.username })
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await request(app)
+          .get("/api/auth/usersearch")
+          .set("Cookie", `jwt=${signToken(grace.id)}`)
+          .query({ username: ada.username })
+      ).body,
+    ).toEqual([]);
+    expect((await request(app).delete(`/api/blocks/${grace.id}`).set("Cookie", `jwt=${signToken(grace.id)}`)).status).toBe(404);
+
+    await expect(blockUser(ada.id, grace.id)).resolves.toMatchObject({ success: true });
+    expect(await prisma.blockedUser.count()).toBe(1);
+    await expect(unblockUser(ada.id, grace.id)).resolves.toEqual({ success: true, userId: grace.id });
+    expect(
+      (
+        await request(app)
+          .post(`/api/messages/send/${grace.id}`)
+          .set("Cookie", `jwt=${signToken(ada.id)}`)
+          .send({ text: "allowed again" })
+      ).status,
+    ).toBe(201);
+    await expect(blockUser(ada.id, ada.id)).rejects.toMatchObject({ code: "SELF_BLOCK" });
+  });
+
+  it("keeps explicit contacts one-way and publishes incoming conversations to every recipient socket", async () => {
     const app = createApp();
     const server = http.createServer(app);
     initializeSocket(server);
@@ -234,16 +343,8 @@ databaseSuite("PostgreSQL integration", () => {
     try {
       const gracePrimary = await connect(grace.id);
       const graceSecondary = await connect(grace.id);
-      sockets.push(gracePrimary, graceSecondary);
-
-      const primaryAdded = waitForSocket<{ contact: { id: number } }>(
-        (resolve) => gracePrimary.once("contactAdded", resolve),
-        "Primary recipient socket missed contactAdded",
-      );
-      const secondaryAdded = waitForSocket<{ contact: { id: number } }>(
-        (resolve) => graceSecondary.once("contactAdded", resolve),
-        "Secondary recipient socket missed contactAdded",
-      );
+      const adaPrimary = await connect(ada.id);
+      sockets.push(gracePrimary, graceSecondary, adaPrimary);
 
       const added = await request(baseUrl)
         .post("/api/contacts")
@@ -251,16 +352,9 @@ databaseSuite("PostgreSQL integration", () => {
         .send({ username: grace.username });
       expect(added.status).toBe(201);
       expect(added.body.contact).toMatchObject({ id: grace.id, is_contact: true });
-      expect(await Promise.all([primaryAdded, secondaryAdded])).toEqual([
-        { contact: expect.objectContaining({ id: ada.id, is_contact: true }) },
-        { contact: expect.objectContaining({ id: ada.id, is_contact: true }) },
-      ]);
-      expect(await prisma.contact.count()).toBe(2);
+      expect(await prisma.contact.count()).toBe(1);
+      expect(await listContacts(grace.id)).toEqual([]);
 
-      let duplicateEvent = false;
-      gracePrimary.once("contactAdded", () => {
-        duplicateEvent = true;
-      });
       expect(
         (
           await request(baseUrl)
@@ -269,16 +363,57 @@ databaseSuite("PostgreSQL integration", () => {
             .send({ username: grace.username })
         ).status,
       ).toBe(201);
-      await new Promise((resolve) => setTimeout(resolve, 150));
-      expect(duplicateEvent).toBe(false);
 
-      const primaryRemoved = waitForSocket<{ contactId: number }>(
-        (resolve) => gracePrimary.once("contactRemoved", resolve),
-        "Primary recipient socket missed contactRemoved",
+      const primaryConversation = waitForSocket<{ contact: { id: number; is_contact: boolean } }>(
+        (resolve) => gracePrimary.once("conversationUpdated", resolve),
+        "Primary recipient socket missed conversationUpdated",
       );
-      const secondaryRemoved = waitForSocket<{ contactId: number }>(
-        (resolve) => graceSecondary.once("contactRemoved", resolve),
-        "Secondary recipient socket missed contactRemoved",
+      const secondaryConversation = waitForSocket<{ contact: { id: number; is_contact: boolean } }>(
+        (resolve) => graceSecondary.once("conversationUpdated", resolve),
+        "Secondary recipient socket missed conversationUpdated",
+      );
+      const primaryMessage = waitForSocket<{ sender_id: number }>(
+        (resolve) => gracePrimary.once("newMessage", resolve),
+        "Primary recipient socket missed newMessage",
+      );
+      const secondaryMessage = waitForSocket<{ sender_id: number }>(
+        (resolve) => graceSecondary.once("newMessage", resolve),
+        "Secondary recipient socket missed newMessage",
+      );
+
+      expect(
+        (
+          await request(baseUrl)
+            .post(`/api/messages/send/${grace.id}`)
+            .set("Cookie", `jwt=${signToken(ada.id)}`)
+            .send({ text: "hello" })
+        ).status,
+      ).toBe(201);
+      expect(await Promise.all([primaryConversation, secondaryConversation])).toEqual([
+        { contact: expect.objectContaining({ id: ada.id, is_contact: false }) },
+        { contact: expect.objectContaining({ id: ada.id, is_contact: false }) },
+      ]);
+      expect(await Promise.all([primaryMessage, secondaryMessage])).toEqual([
+        expect.objectContaining({ sender_id: ada.id }),
+        expect.objectContaining({ sender_id: ada.id }),
+      ]);
+      expect(await listContacts(grace.id)).toEqual([expect.objectContaining({ id: ada.id, is_contact: false })]);
+
+      expect(
+        (
+          await request(baseUrl)
+            .post("/api/contacts")
+            .set("Cookie", `jwt=${signToken(grace.id)}`)
+            .send({ username: ada.username })
+        ).status,
+      ).toBe(201);
+      const graceDeleteReset = waitForSocket<{ userId: number; contact: { id: number; is_contact: boolean } }>(
+        (resolve) => gracePrimary.once("conversationReset", resolve),
+        "Peer socket missed contact-preserving conversationReset",
+      );
+      const adaDeleteReset = waitForSocket<{ userId: number; contact: null }>(
+        (resolve) => adaPrimary.once("conversationReset", resolve),
+        "Deleting user socket missed conversationReset",
       );
       expect(
         (
@@ -287,23 +422,49 @@ databaseSuite("PostgreSQL integration", () => {
             .set("Cookie", `jwt=${signToken(ada.id)}`)
         ).status,
       ).toBe(200);
-      expect(await Promise.all([primaryRemoved, secondaryRemoved])).toEqual([
-        { contactId: ada.id },
-        { contactId: ada.id },
+      expect(await Promise.all([graceDeleteReset, adaDeleteReset])).toEqual([
+        { userId: ada.id, contact: expect.objectContaining({ id: ada.id, is_contact: true }) },
+        { userId: grace.id, contact: null },
       ]);
-      expect(await prisma.contact.count()).toBe(0);
+      expect(await prisma.contact.count()).toBe(1);
+      expect(await prisma.message.count()).toBe(0);
 
-      gracePrimary.disconnect();
-      graceSecondary.disconnect();
       expect(
         (
           await request(baseUrl)
-            .post("/api/contacts")
+            .post(`/api/messages/send/${grace.id}`)
             .set("Cookie", `jwt=${signToken(ada.id)}`)
-            .send({ username: grace.username })
+            .send({ text: "new conversation" })
         ).status,
       ).toBe(201);
-      expect(await listContacts(grace.id)).toEqual([expect.objectContaining({ id: ada.id, is_contact: true })]);
+
+      const gracePrimaryReset = waitForSocket<{ userId: number; contact: null }>(
+        (resolve) => gracePrimary.once("conversationReset", resolve),
+        "Primary recipient socket missed conversationReset",
+      );
+      const graceSecondaryReset = waitForSocket<{ userId: number; contact: null }>(
+        (resolve) => graceSecondary.once("conversationReset", resolve),
+        "Secondary recipient socket missed conversationReset",
+      );
+      const adaReset = waitForSocket<{ userId: number; contact: null }>(
+        (resolve) => adaPrimary.once("conversationReset", resolve),
+        "Blocked user socket missed conversationReset",
+      );
+      expect(
+        (
+          await request(baseUrl)
+            .post(`/api/blocks/${ada.id}`)
+            .set("Cookie", `jwt=${signToken(grace.id)}`)
+        ).status,
+      ).toBe(201);
+      expect(await Promise.all([gracePrimaryReset, graceSecondaryReset, adaReset])).toEqual([
+        { userId: ada.id, contact: null },
+        { userId: ada.id, contact: null },
+        { userId: grace.id, contact: null },
+      ]);
+      expect(await prisma.contact.count()).toBe(0);
+      expect(await prisma.message.count()).toBe(0);
+      expect(await listContacts(grace.id)).toEqual([]);
     } finally {
       for (const socket of sockets) socket.disconnect();
       await closeSocket();
