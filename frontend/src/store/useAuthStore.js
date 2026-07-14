@@ -141,12 +141,12 @@ export const useAuthStore = create((set, get) => ({
 		socket.on("getOnlineUsers", (userIds) => {
 			set({ onlineUsers: userIds });
 		});
-		useChatStore.getState().subscribeToContactEvents(socket);
+		useChatStore.getState().subscribeToSidebarEvents(socket);
 		socket.connect();
 	},
 	disconnectSocket: () => {
 		const socket = get().socket;
-		useChatStore.getState().unsubscribeFromContactEvents(socket);
+		useChatStore.getState().unsubscribeFromSidebarEvents(socket);
 		if (socket?.connected) socket.disconnect();
 		set({ socket: null, onlineUsers: [] });
 	},

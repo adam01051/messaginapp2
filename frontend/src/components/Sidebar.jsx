@@ -5,7 +5,7 @@ import SidebarSkeleton from "./skeletons/SidebarSkeleton";
 import { Users } from "lucide-react";
 
 const Sidebar = () => {
-	const { getUsers, users, selectedUser, setSelectedUser, isUsersLoading} =
+	const { getUsers, users, usersError, selectedUser, setSelectedUser, isUsersLoading} =
 		useChatStore();
 
 	const { onlineUsers } = useAuthStore();
@@ -47,7 +47,13 @@ const Sidebar = () => {
 			</div>
 
 			<div className="overflow-y-auto w-full py-3">
-				{filteredUsers.map((user) => (
+				{usersError && (
+					<div className="px-3 py-4 text-center">
+						<p className="text-sm text-error hidden lg:block">{usersError}</p>
+						<button type="button" onClick={getUsers} className="btn btn-xs mt-2">Retry</button>
+					</div>
+				)}
+				{!usersError && filteredUsers.map((user) => (
 					<button
 						key={user.id}
 						onClick={() => setSelectedUser(user)}
@@ -91,18 +97,22 @@ const Sidebar = () => {
 								{onlineUsers.includes(user.id.toString())
 									? "Online"
 									: "Offline"}
-								{!user?.is_contact ? (
-									<div className="text-red-900">Not registered</div>
-								) : (
-									""
-								)}
+								<div className="mt-1">
+									{user.is_contact ? (
+										<span className="badge badge-success badge-sm">Contact</span>
+									) : (
+										<span className="badge badge-warning badge-sm">New message request</span>
+									)}
+								</div>
 							</div>
 						</div>
 					</button>
 				))}
 
-				{filteredUsers.length === 0 && (
-					<div className="text-center text-zinc-500 py-4">No online users</div>
+				{!usersError && filteredUsers.length === 0 && (
+					<div className="text-center text-zinc-500 py-4 px-2 hidden lg:block">
+						{showOnlineOnly ? "No contacts online" : "No contacts or message requests yet"}
+					</div>
 				)}
 			</div>
 		</aside>

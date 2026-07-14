@@ -9,11 +9,15 @@ export const useChatStore = create((set, get) => ({
 	selectedUser: null,
 
 	isUsersLoading: false,
+	usersError: null,
 	isMessagesLoading: false,
 	isOlderMessagesLoading: false,
 	nextCursor: null,
 	isNewMessage: null,
 	addResults: null,
+	blockedUsers: [],
+	isBlockedUsersLoading: false,
+	blockedUsersError: null,
 
 	addUser: async (username) => {
 		try {
@@ -39,7 +43,13 @@ export const useChatStore = create((set, get) => ({
 	deleteUser: async (user) => {
 		try {
 			await axiosInstance.delete(`/contacts/${user.id}`);
-			get().removeContact(user.id);
+			await get().getUsers();
+			set((state) => ({
+				selectedUser:
+					String(state.selectedUser?.id) === String(user.id)
+						? state.users.find((item) => String(item.id) === String(user.id)) || null
+						: state.selectedUser,
+			}));
 			
 			toast.success("Contact successfully deleted");
 		} catch (error) {
@@ -48,16 +58,76 @@ export const useChatStore = create((set, get) => ({
 			toast.error("User deleting is failed");
 		}
 	},
+	blockUser: async (user) => {
+		try {
+			const res = await axiosInstance.post(`/blocks/${user.id}`);
+			get().resetConversation({ userId: user.id, contact: null });
+			set((state) => ({
+				blockedUsers: [
+					res.data.blockedUser,
+					...state.blockedUsers.filter((item) => String(item.id) !== String(user.id)),
+				],
+			}));
+			toast.success("User blocked");
+			return true;
+		} catch (error) {
+			toast.error(error.response?.data?.message || "Blocking user failed");
+			return false;
+		}
+	},
+	getBlockedUsers: async () => {
+		set({ isBlockedUsersLoading: true, blockedUsersError: null });
+		try {
+			const res = await axiosInstance.get("/blocks");
+			set({ blockedUsers: Array.isArray(res.data) ? res.data : [] });
+		} catch (error) {
+			const message = error.response?.data?.message || "Failed to load blocked users";
+			set({ blockedUsersError: message });
+			toast.error(message);
+		} finally {
+			set({ isBlockedUsersLoading: false });
+		}
+	},
+	unblockUser: async (userId) => {
+		try {
+			await axiosInstance.delete(`/blocks/${userId}`);
+			set((state) => ({
+				blockedUsers: state.blockedUsers.filter((user) => String(user.id) !== String(userId)),
+			}));
+			toast.success("User unblocked");
+		} catch (error) {
+			toast.error(error.response?.data?.message || "Unblocking user failed");
+		}
+	},
 	upsertContact: (contact) => {
+		if (!contact?.id) return;
+		set((state) => {
+			const existing = state.users.find((user) => String(user.id) === String(contact.id));
+			const merged = {
+				...existing,
+				...contact,
+				last_message_time: existing?.last_message_time || contact.last_message_time || null,
+				is_contact: true,
+			};
+			return {
+				users: [merged, ...state.users.filter((user) => String(user.id) !== String(contact.id))],
+				selectedUser:
+					String(state.selectedUser?.id) === String(contact.id)
+						? { ...state.selectedUser, ...merged }
+						: state.selectedUser,
+			};
+		});
+	},
+	upsertConversation: (contact) => {
 		if (!contact?.id) return;
 		set((state) => ({
 			users: [
-				{ ...contact, is_contact: true },
+				contact,
 				...state.users.filter((user) => String(user.id) !== String(contact.id)),
 			],
 			selectedUser:
 				String(state.selectedUser?.id) === String(contact.id)
-					? { ...state.selectedUser, ...contact, is_contact: true }
+					? { ...state.selectedUser, ...contact }
 					: state.selectedUser,
 		}));
 	},
@@ -68,38 +138,63 @@ export const useChatStore = create((set, get) => ({
 				String(state.selectedUser?.id) === String(contactId) ? null : state.selectedUser,
 		}));
 	},
+	resetConversation: ({ userId, contact }) => {
+		set((state) => {
+			const isSelected = String(state.selectedUser?.id) === String(userId);
+			const remainingUsers = state.users.filter((user) => String(user.id) !== String(userId));
+			return {
+				users: contact ? [contact, ...remainingUsers] : remainingUsers,
+				selectedUser: isSelected ? contact : state.selectedUser,
+				messages: isSelected ? [] : state.messages,
+				nextCursor: isSelected ? null : state.nextCursor,
+			};
+		});
+	},
 	resetChatState: () =>
 		set({
 			messages: [],
 			users: [],
+			usersError: null,
 			selectedUser: null,
 			nextCursor: null,
 			isNewMessage: null,
 			addResults: null,
+			blockedUsers: [],
+			blockedUsersError: null,
 		}),
-	subscribeToContactEvents: (socket) => {
+	subscribeToSidebarEvents: (socket) => {
 		if (!socket) return;
-		socket.off("contactAdded");
-		socket.off("contactRemoved");
-		socket.on("contactAdded", ({ contact }) => {
-			get().upsertContact(contact);
-			toast.success(`${contact.name || contact.username} added you`);
+		socket.off("conversationUpdated");
+		socket.off("conversationReset");
+		socket.on("conversationUpdated", ({ contact }) => {
+			const isNewConversation = !get().users.some(
+				(user) => String(user.id) === String(contact?.id)
+			);
+			get().upsertConversation(contact);
+			if (isNewConversation) {
+				toast.success(`New message from ${contact.name || contact.username}`);
+			}
 		});
-		socket.on("contactRemoved", ({ contactId }) => get().removeContact(contactId));
+		socket.on("conversationReset", (payload) => get().resetConversation(payload));
 	},
-	unsubscribeFromContactEvents: (socket) => {
-		socket?.off("contactAdded");
-		socket?.off("contactRemoved");
+	unsubscribeFromSidebarEvents: (socket) => {
+		socket?.off("conversationUpdated");
+		socket?.off("conversationReset");
 	},
 
 	getUsers: async () => {
-		set({ isUsersLoading: true });
+		set({ isUsersLoading: true, usersError: null });
 		try {
 			const res = await axiosInstance.get("/contacts");
 
-			set({ users: Array.isArray(res.data) ? res.data : [] });
+			const users = Array.isArray(res.data)
+				? res.data.filter((user) => user && Number.isInteger(Number(user.id)))
+				: [];
+			set({ users });
 		} catch (error) {
-			toast.error(error.response?.data?.message || "Failed to load contacts");
+			const message = error.response?.data?.message || "Failed to load contacts";
+			set({ users: [], usersError: message, selectedUser: null, messages: [], nextCursor: null });
+			toast.error(message);
 			console.log("there was  problem getting users from database");
 		} finally {
 			set({ isUsersLoading: false });
