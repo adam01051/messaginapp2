@@ -1,7 +1,7 @@
 import { X, User, Mail,Contact } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
-import {  useEffect ,useState} from "react";
+import { useEffect, useState } from "react";
 import "react-medium-image-zoom/dist/styles.css";
 
 import Lightbox from "yet-another-react-lightbox";
@@ -15,7 +15,7 @@ import "yet-another-react-lightbox/plugins/counter.css";
 const ChatHeader = () => {
 	const { selectedUser, getUsers, deleteUser, addUser } =
 		useChatStore();
-	const { onlineUsers, profilePics } = useAuthStore();
+	const { onlineUsers } = useAuthStore();
 	const [userPics, setUserPics] = useState([]);
 	const [lightboxOpen, setLightboxOpen] = useState(false);
 
@@ -24,15 +24,8 @@ const ChatHeader = () => {
 		
 
 	
-		if (profilePics && selectedUser) {
-
-			const pics = profilePics.filter(
-				(pic) => pic.user_ref === selectedUser.id
-			);
-
-			setUserPics(pics);
-		}
-	}, [profilePics, selectedUser]);
+		setUserPics(selectedUser?.profilePic ? [selectedUser.profilePic] : []);
+	}, [selectedUser]);
 
 	const handleAdd = async () => {
 		await addUser(selectedUser.username); // wait for backend

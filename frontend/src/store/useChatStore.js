@@ -13,14 +13,14 @@ export const useChatStore = create((set, get) => ({
 
 	isUsersLoading: false,
 	isMessagesLoading: false,
+	isOlderMessagesLoading: false,
+	nextCursor: null,
 	isNewMessage: null,
 	addResults: null,
 
 	addUser: async (username) => {
 		try {
-			const res = await axiosInstance.get("/messages/add-user", {
-				params: { username },
-			});
+			const res = await axiosInstance.post("/contacts", { username });
 			set({ addResults: res.data });
 			set((state) => ({
 				selectedUser: { ...state.selectedUser, is_contact: true },
@@ -37,9 +37,7 @@ export const useChatStore = create((set, get) => ({
 	},
 	deleteUser: async (user) => {
 		try {
-			  await axiosInstance.get("/messages/delete-user", {
-				params: { user },
-			});
+			await axiosInstance.delete(`/contacts/${user.id}`);
 			set({ selectedUser: null });
 		    await get().getUsers();
 			
@@ -54,28 +52,35 @@ export const useChatStore = create((set, get) => ({
 	getUsers: async () => {
 		set({ isUsersLoading: true });
 		try {
-			const res = await axiosInstance.get("/messages/user");
+			const res = await axiosInstance.get("/contacts");
 
 			set({ users: Array.isArray(res.data) ? res.data : [] });
 		} catch (error) {
-			toast.error(error.response.data.message);
+			toast.error(error.response?.data?.message || "Failed to load contacts");
 			console.log("there was  problem getting users from database");
 		} finally {
 			set({ isUsersLoading: false });
 		}
 	},
 	//check
-	getMessages: async (userId) => {
-		set({ isMessagesLoading: true });
+	getMessages: async (userId, loadOlder = false) => {
+		const cursor = loadOlder ? get().nextCursor : null;
+		if (loadOlder && !cursor) return;
+		set(loadOlder ? { isOlderMessagesLoading: true } : { isMessagesLoading: true });
 		try {
-			const res = await axiosInstance.get(`/messages/${userId}`);
-			set({ messages: res.data });
+			const res = await axiosInstance.get(`/messages/${userId}`, {
+				params: { ...(cursor ? { cursor } : {}), limit: 50 },
+			});
+			set((state) => ({
+				messages: loadOlder ? [...res.data.items, ...state.messages] : res.data.items,
+				nextCursor: res.data.nextCursor,
+			}));
 		} catch (error) {
 			toast.error(error.response?.data?.message || "Failed to load users");
 
 			console.log("there was  problem getting messages from database");
 		} finally {
-			set({ isMessagesLoading: false });
+			set(loadOlder ? { isOlderMessagesLoading: false } : { isMessagesLoading: false });
 		}
 	},
 	sendMessage: async (messageData) => {
@@ -90,7 +95,7 @@ export const useChatStore = create((set, get) => ({
 				users: [selectedUser, ...users.filter((u) => u.id !== selectedUser.id)],
 			});
 		} catch (error) {
-			toast.error(error.response.data.message);
+			toast.error(error.response?.data?.message || "Failed to send message");
 		}
 	},
 	subscribeToMessages: () => {
@@ -98,6 +103,7 @@ export const useChatStore = create((set, get) => ({
 		if (!selectedUser) return;
 
 		const socket = useAuthStore.getState().socket;
+		if (!socket) return;
 
 		socket.on("newMessage", (newMessage) => {
 			set((state) => {
@@ -120,7 +126,7 @@ export const useChatStore = create((set, get) => ({
 
 	unsubscribeFromMessages: () => {
 		const socket = useAuthStore.getState().socket;
-		socket.off("newMessage");
+		socket?.off("newMessage");
 	},
 
 	closeChat: () => {
@@ -131,6 +137,6 @@ export const useChatStore = create((set, get) => ({
 		const { selectedUser } = get();
 		// If same user, do nothing
 		if (selectedUser?.id === user.id) return;
-		set({ selectedUser: user });
+		set({ selectedUser: user, messages: [], nextCursor: null });
 	},
 }));

@@ -1,6 +1,6 @@
 # Messaging Application
 
-A full-stack real-time messaging application built using Node.js, Express, PostgreSQL, Socket.IO, and React.
+A full-stack real-time messaging application built using TypeScript, Node.js, Express, Prisma, PostgreSQL, Socket.IO, and React.
 The system provides secure authentication, real-time communication, and media sharing.
 
 ---
@@ -33,7 +33,8 @@ This project is designed as a scalable messaging platform that supports user aut
 * PostgreSQL
 * Socket.IO
 * Cloudinary
-* Session-based authentication
+* Prisma ORM and versioned migrations
+* JWT cookie authentication
 
 ### Frontend
 
@@ -73,27 +74,22 @@ npm install
 
 ### 3. Environment Configuration
 
-Create a `.env` file inside the backend directory.
+Copy `backend/.env.example` to `backend/.env` and replace every placeholder.
 
 Example configuration:
 
 ```
 PORT=5001
-LOCAL_URL=http://localhost:5173
+CLIENT_ORIGIN=http://localhost:5173
 
-PG_NAME=your_pg_username
-PG_PASSWORD=your_pg_password
-PG_HOST=localhost
-PG_PORT=5432
-PG_DATABASE=your_database_name
+DATABASE_URL=postgresql://postgres:password@localhost:5432/messaging_app2?schema=public
+SHADOW_DATABASE_URL=postgresql://postgres:password@localhost:5432/messaging_app2_shadow?schema=public
 
 CLOUDINARY_NAME=
 CLOUDINARY_KEY=
 CLOUDINARY_SECRET=
 
-SESSION_SECRET=your_secret_key
-
-NOT_LOCALURL=https://your-production-url/api
+JWT_SECRET=replace-with-a-long-random-secret
 
 NODE_ENV=development
 ```
@@ -102,13 +98,27 @@ NODE_ENV=development
 
 ### 4. Database Setup
 
-Ensure PostgreSQL is installed and running.
-
-Create a new database:
+Ensure PostgreSQL is installed and create development and shadow databases:
 
 ```
-CREATE DATABASE your_database_name;
+CREATE DATABASE messaging_app2;
+CREATE DATABASE messaging_app2_shadow;
 ```
+
+For a new empty database, apply the checked-in schema:
+
+```
+cd backend
+npm run prisma:migrate:deploy
+```
+
+For an existing database, do not apply the baseline immediately. Back it up, clone it, run `npm run prisma:pull:print --prefix backend` without overwriting the checked-in schema, compare the introspection output with `prisma/schema.prisma`, reconcile differences, and only then mark the baseline as applied:
+
+```
+npx prisma migrate resolve --applied 00000000000000_baseline
+```
+
+Follow the complete [PostgreSQL migration runbook](docs/database-migration.md) for non-destructive introspection, drift detection, clone validation, and the production release gate.
 
 ---
 
@@ -146,51 +156,13 @@ http://localhost:5173
 
 ## PostgreSQL Schema
 
-### Users Table
-
-```
-CREATE TABLE users (
-  id SERIAL PRIMARY KEY,
-  username VARCHAR(100) NOT NULL,
-  email VARCHAR(255) UNIQUE NOT NULL,
-  password TEXT,
-  avatar TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
----
-
-### Messages Table
-
-```
-CREATE TABLE messages (
-  id SERIAL PRIMARY KEY,
-  sender_id INT REFERENCES users(id) ON DELETE CASCADE,
-  receiver_id INT REFERENCES users(id) ON DELETE CASCADE,
-  message TEXT,
-  image TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
----
-
-### Sessions Table (Optional)
-
-```
-CREATE TABLE sessions (
-  sid VARCHAR PRIMARY KEY,
-  sess JSON NOT NULL,
-  expire TIMESTAMP NOT NULL
-);
-```
+`backend/prisma/schema.prisma` is the application schema source of truth. Migration SQL is versioned in `backend/prisma/migrations`. The core models are `User`, `ProfilePic`, `Contact`, and `Message`; Prisma field mappings preserve the existing snake_case PostgreSQL names.
 
 ---
 
 ## Production
 
-To build and start the application:
+Production requires Node.js 20.19 or newer; Node.js 22 LTS is recommended. To build and start the application:
 
 ```
 npm run build
@@ -228,4 +200,3 @@ Search page
 
 
 ---
-

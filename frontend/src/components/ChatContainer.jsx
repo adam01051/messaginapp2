@@ -19,6 +19,8 @@ const ChatContainer = () => {
 		messages,
 		getMessages,
 		isMessagesLoading,
+		isOlderMessagesLoading,
+		nextCursor,
 		selectedUser,
 		subscribeToMessages,
 		unsubscribeFromMessages,
@@ -66,13 +68,7 @@ const ChatContainer = () => {
 			setUserPics(profilePics.filter((pic) => pic.user_ref === authUser.id));
 			
 		}
-		if (profilePics && selectedUser) {
-			setSelectedUserPics(
-				profilePics.filter((pic) => pic.user_ref === selectedUser.id)
-				
-			);
-			
-		}
+		setSelectedUserPics(selectedUser?.profilePic ? [selectedUser.profilePic] : []);
 	}, [profilePics, authUser, selectedUser]);
 
 	// Scroll to bottom on new messages
@@ -108,6 +104,18 @@ const ChatContainer = () => {
 			<ChatHeader />
 
 			<div className="flex-1 overflow-y-auto p-4 space-y-4">
+				{nextCursor && (
+					<div className="flex justify-center">
+						<button
+							type="button"
+							className="btn btn-sm btn-ghost"
+							disabled={isOlderMessagesLoading}
+							onClick={() => getMessages(selectedUser.id, true)}
+						>
+							{isOlderMessagesLoading ? "Loading..." : "Load older messages"}
+						</button>
+					</div>
+				)}
 				{messages.map((message) => {
 					const isAuthUserMsg =
 						String(message.sender_id) === String(authUser.id);

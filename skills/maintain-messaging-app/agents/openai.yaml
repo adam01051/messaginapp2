@@ -1,0 +1,4 @@
+interface:
+  display_name: "Maintain Messaging App"
+  short_description: "Safely modify this full-stack messaging app"
+  default_prompt: "Use $maintain-messaging-app to inspect and modify this messaging project safely."
