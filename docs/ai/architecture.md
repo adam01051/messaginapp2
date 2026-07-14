@@ -1,6 +1,6 @@
 # Architecture
 
-Last reviewed: 2026-07-14 (Prisma/PostgreSQL verification)
+Last reviewed: 2026-07-14 (deployment readiness)
 
 ## Runtime topology
 
@@ -17,7 +17,7 @@ The application has two packages:
 State is split across Zustand stores:
 
 - `useAuthStore`: session user, the current user's profile-picture history, auth actions, user search, online-user IDs, and socket lifecycle.
-- `useChatStore`: sidebar users, selected conversation, messages, contact changes, and the `newMessage` subscription.
+- `useChatStore`: sidebar users, selected conversation, messages, and authenticated-session message/contact subscriptions.
 - `useThemeStore`: persisted DaisyUI theme selection.
 
 The main chat path is `HomePage` -> `Sidebar`/`ChatContainer` -> `useChatStore` -> Axios/Socket.IO.
@@ -40,8 +40,8 @@ API surface:
 | PUT | `/api/auth/edit-profile` | Yes | Update name, username, and number |
 | GET | `/api/auth/usersearch` | Yes | Search by username expression |
 | GET | `/api/contacts` | Yes | List contacts and inbound senders with current avatars |
-| POST | `/api/contacts` | Yes | Add a contact by username |
-| DELETE | `/api/contacts/:contactId` | Yes | Remove a contact without deleting messages |
+| POST | `/api/contacts` | Yes | Add both directions of a mutual contact |
+| DELETE | `/api/contacts/:contactId` | Yes | Remove both contact directions without deleting messages |
 | GET | `/api/messages/:userId` | Yes | Load a cursor-paginated conversation |
 | POST | `/api/messages/send/:userId` | Yes | Store a message and then emit `newMessage` |
 
@@ -54,14 +54,16 @@ The Prisma schema and migrations define:
 - `contacts`: `user_id`, `contact_id`
 - `messages`: `id`, `sender_id`, `receiver_id`, `content`, `image`, `created_at`
 
-The baseline migration creates unique user emails/usernames, a composite contact primary key, foreign keys with cascading user deletion, and conversation/profile lookup indexes. These constraints were verified against a disposable PostgreSQL 16 database; the existing production schema still requires reconciliation against a restored clone.
+The baseline migration creates unique user emails/usernames, a composite contact primary key, foreign keys with cascading user deletion, and conversation/profile lookup indexes. It is intended to be deployed to a new empty PostgreSQL 16 database; no legacy database is adopted.
 
 ## Real-time flow
 
-Socket.IO verifies the JWT cookie during its handshake and maps each user to a set of socket IDs, supporting multiple tabs/devices. Sending a message first commits through Prisma; only then does the server emit `newMessage`.
+Socket.IO verifies the JWT cookie during its handshake and maps each user to a set of socket IDs, supporting multiple tabs/devices. Messages and mutual contact changes commit through Prisma before the server emits `newMessage`, `contactAdded`, or `contactRemoved`. Offline users reconstruct contact state from PostgreSQL after login.
+
+Cloudinary stores new profile pictures under `messaging-app/profiles` and message attachments under `messaging-app/messages`. PostgreSQL stores only secure URLs, and the production content-security policy permits Cloudinary image delivery.
 
 ## Environment
 
-Backend configuration: `PORT`, `CLIENT_ORIGIN`, `DATABASE_URL`, optional `SHADOW_DATABASE_URL` for Prisma, Cloudinary credentials, `JWT_SECRET`, `LOG_LEVEL`, and `NODE_ENV`. Express and Socket.IO share `CLIENT_ORIGIN`.
+Backend configuration: `PORT`, `CLIENT_ORIGIN`, a direct/session `DATABASE_URL`, Cloudinary credentials, `JWT_SECRET`, `LOG_LEVEL`, and `NODE_ENV`. `DATABASE_URL` accepts both `postgres://` and `postgresql://`. All Cloudinary values are required together in production. Express and Socket.IO share `CLIENT_ORIGIN`. `SHADOW_DATABASE_URL` is optional for Prisma development/diff workflows and is not used for production migration deployment.
 
-`RUN_DATABASE_TESTS=true` enables destructive integration-test cleanup and must only be used with a disposable test database. Database adoption and clean-install procedures are documented in `docs/database-migration.md`.
+`RUN_DATABASE_TESTS=true` enables destructive integration-test cleanup and is rejected unless the database name has a recognized disposable-test suffix. Fresh managed-database setup is documented in `docs/database-migration.md`.

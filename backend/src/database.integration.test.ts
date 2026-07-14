@@ -1,15 +1,39 @@
+import http from "node:http";
 import request from "supertest";
-import { beforeEach, describe, expect, it } from "vitest";
+import { io as createSocketClient, type Socket } from "socket.io-client";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createApp } from "./app.js";
+import { signToken } from "./lib/jwt.js";
 import { prisma } from "./lib/prisma.js";
 import { getAuthUser } from "./modules/auth/auth.service.js";
-import { deleteContact } from "./modules/contacts/contact.service.js";
-import { listContacts } from "./modules/contacts/contact.service.js";
+import { addContact, deleteContact, listContacts } from "./modules/contacts/contact.service.js";
 import { getMessages } from "./modules/messages/message.service.js";
+import { closeSocket, initializeSocket } from "./realtime/socket.js";
 
 const databaseSuite = describe.runIf(process.env.RUN_DATABASE_TESTS === "true");
 
+const waitForSocket = <T>(subscribe: (resolve: (value: T) => void) => void, message: string) =>
+  new Promise<T>((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error(message)), 5_000);
+    subscribe((value) => {
+      clearTimeout(timeout);
+      resolve(value);
+    });
+  });
+
 databaseSuite("PostgreSQL integration", () => {
+  beforeAll(() => {
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl) throw new Error("DATABASE_URL is required when RUN_DATABASE_TESTS=true");
+
+    const databaseName = decodeURIComponent(new URL(databaseUrl).pathname.slice(1));
+    if (!/(_test|_testing|_ci|_verify)$/i.test(databaseName)) {
+      throw new Error(
+        `Refusing destructive database tests against ${databaseName}. Use a disposable database ending in _test, _testing, _ci, or _verify.`,
+      );
+    }
+  });
+
   beforeEach(async () => {
     await prisma.message.deleteMany();
     await prisma.contact.deleteMany();
@@ -43,6 +67,21 @@ databaseSuite("PostgreSQL integration", () => {
     });
   });
 
+  it("creates mutual contacts idempotently and reconstructs both offline sidebars", async () => {
+    const [owner, contact] = await Promise.all([
+      prisma.user.create({ data: { name: "Ada", username: "ada", email: "ada@example.com", passwordHash: "hash" } }),
+      prisma.user.create({
+        data: { name: "Grace", username: "grace", email: "grace@example.com", passwordHash: "hash" },
+      }),
+    ]);
+
+    await expect(addContact(owner.id, owner.username, contact.username)).resolves.toMatchObject({ created: true });
+    await expect(addContact(owner.id, owner.username, contact.username)).resolves.toMatchObject({ created: false });
+    expect(await prisma.contact.count()).toBe(2);
+    expect(await listContacts(owner.id)).toEqual([expect.objectContaining({ id: contact.id, is_contact: true })]);
+    expect(await listContacts(contact.id)).toEqual([expect.objectContaining({ id: owner.id, is_contact: true })]);
+  });
+
   it("returns scoped profile-picture history and the latest contact avatar", async () => {
     const [owner, contact] = await Promise.all([
       prisma.user.create({ data: { name: "Ada", username: "ada", email: "ada@example.com", passwordHash: "hash" } }),
@@ -50,10 +89,12 @@ databaseSuite("PostgreSQL integration", () => {
         data: { name: "Grace", username: "grace", email: "grace@example.com", passwordHash: "hash" },
       }),
     ]);
-    const [older, newer] = await Promise.all([
-      prisma.profilePic.create({ data: { userId: contact.id, url: "https://example.com/older.png" } }),
-      prisma.profilePic.create({ data: { userId: contact.id, url: "https://example.com/newer.png" } }),
-    ]);
+    const older = await prisma.profilePic.create({
+      data: { userId: contact.id, url: "https://example.com/older.png" },
+    });
+    const newer = await prisma.profilePic.create({
+      data: { userId: contact.id, url: "https://example.com/newer.png" },
+    });
     await prisma.profilePic.create({ data: { userId: owner.id, url: "https://example.com/owner.png" } });
     await prisma.contact.create({ data: { userId: owner.id, contactId: contact.id } });
 
@@ -135,6 +176,8 @@ databaseSuite("PostgreSQL integration", () => {
     const added = await ada.post("/api/contacts").send({ username: "grace" });
     expect(added.status).toBe(201);
     expect(added.body.contactId).toBe(graceSignup.body.id);
+    expect(added.body.contact).toMatchObject({ id: graceSignup.body.id, is_contact: true });
+    expect(await prisma.contact.count()).toBe(2);
 
     const sent = await ada.post(`/api/messages/send/${graceSignup.body.id}`).send({ text: "hello" });
     expect(sent.status).toBe(201);
@@ -159,5 +202,112 @@ databaseSuite("PostgreSQL integration", () => {
     const login = await ada.post("/api/auth/login").send({ email: "ada@example.com", password: "password-123" });
     expect(login.status).toBe(200);
     expect((await ada.get("/api/auth/check")).status).toBe(200);
+  });
+
+  it("publishes mutual contact changes to every recipient socket and preserves offline state", async () => {
+    const app = createApp();
+    const server = http.createServer(app);
+    initializeSocket(server);
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("Test server did not bind a TCP port");
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    const [ada, grace] = await Promise.all([
+      prisma.user.create({ data: { name: "Ada", username: "ada", email: "ada@example.com", passwordHash: "hash" } }),
+      prisma.user.create({
+        data: { name: "Grace", username: "grace", email: "grace@example.com", passwordHash: "hash" },
+      }),
+    ]);
+
+    const connect = async (userId: number) => {
+      const socket = createSocketClient(baseUrl, {
+        forceNew: true,
+        transports: ["websocket"],
+        extraHeaders: { Cookie: `jwt=${signToken(userId)}` },
+      });
+      await waitForSocket<void>((resolve) => socket.once("connect", () => resolve()), "Socket connection timed out");
+      return socket;
+    };
+
+    const sockets: Socket[] = [];
+    try {
+      const gracePrimary = await connect(grace.id);
+      const graceSecondary = await connect(grace.id);
+      sockets.push(gracePrimary, graceSecondary);
+
+      const primaryAdded = waitForSocket<{ contact: { id: number } }>(
+        (resolve) => gracePrimary.once("contactAdded", resolve),
+        "Primary recipient socket missed contactAdded",
+      );
+      const secondaryAdded = waitForSocket<{ contact: { id: number } }>(
+        (resolve) => graceSecondary.once("contactAdded", resolve),
+        "Secondary recipient socket missed contactAdded",
+      );
+
+      const added = await request(baseUrl)
+        .post("/api/contacts")
+        .set("Cookie", `jwt=${signToken(ada.id)}`)
+        .send({ username: grace.username });
+      expect(added.status).toBe(201);
+      expect(added.body.contact).toMatchObject({ id: grace.id, is_contact: true });
+      expect(await Promise.all([primaryAdded, secondaryAdded])).toEqual([
+        { contact: expect.objectContaining({ id: ada.id, is_contact: true }) },
+        { contact: expect.objectContaining({ id: ada.id, is_contact: true }) },
+      ]);
+      expect(await prisma.contact.count()).toBe(2);
+
+      let duplicateEvent = false;
+      gracePrimary.once("contactAdded", () => {
+        duplicateEvent = true;
+      });
+      expect(
+        (
+          await request(baseUrl)
+            .post("/api/contacts")
+            .set("Cookie", `jwt=${signToken(ada.id)}`)
+            .send({ username: grace.username })
+        ).status,
+      ).toBe(201);
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      expect(duplicateEvent).toBe(false);
+
+      const primaryRemoved = waitForSocket<{ contactId: number }>(
+        (resolve) => gracePrimary.once("contactRemoved", resolve),
+        "Primary recipient socket missed contactRemoved",
+      );
+      const secondaryRemoved = waitForSocket<{ contactId: number }>(
+        (resolve) => graceSecondary.once("contactRemoved", resolve),
+        "Secondary recipient socket missed contactRemoved",
+      );
+      expect(
+        (
+          await request(baseUrl)
+            .delete(`/api/contacts/${grace.id}`)
+            .set("Cookie", `jwt=${signToken(ada.id)}`)
+        ).status,
+      ).toBe(200);
+      expect(await Promise.all([primaryRemoved, secondaryRemoved])).toEqual([
+        { contactId: ada.id },
+        { contactId: ada.id },
+      ]);
+      expect(await prisma.contact.count()).toBe(0);
+
+      gracePrimary.disconnect();
+      graceSecondary.disconnect();
+      expect(
+        (
+          await request(baseUrl)
+            .post("/api/contacts")
+            .set("Cookie", `jwt=${signToken(ada.id)}`)
+            .send({ username: grace.username })
+        ).status,
+      ).toBe(201);
+      expect(await listContacts(grace.id)).toEqual([expect.objectContaining({ id: ada.id, is_contact: true })]);
+    } finally {
+      for (const socket of sockets) socket.disconnect();
+      await closeSocket();
+      if (server.listening) await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
   });
 });

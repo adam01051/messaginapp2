@@ -33,7 +33,12 @@ export const sendMessage = async (senderId: number, receiverId: number, text: st
   if (!receiver) throw new AppError(404, "User not found", "USER_NOT_FOUND");
 
   let upload: Awaited<ReturnType<typeof cloudinary.uploader.upload>> | undefined;
-  if (image) upload = await cloudinary.uploader.upload(image, { resource_type: "image" });
+  if (image) {
+    upload = await cloudinary.uploader.upload(image, {
+      resource_type: "image",
+      folder: "messaging-app/messages",
+    });
+  }
 
   try {
     const message = await prisma.message.create({

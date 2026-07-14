@@ -23,7 +23,14 @@ export const createApp = () => {
     next();
   });
   app.use(pinoHttp({ logger }));
-  app.use(helmet({ contentSecurityPolicy: env.NODE_ENV === "production" ? undefined : false }));
+  app.use(
+    helmet({
+      contentSecurityPolicy:
+        env.NODE_ENV === "production"
+          ? { directives: { imgSrc: ["'self'", "data:", "https://res.cloudinary.com"] } }
+          : false,
+    }),
+  );
   app.use(cors({ origin: env.CLIENT_ORIGIN, credentials: true }));
   app.use(express.json({ limit: "10mb" }));
   app.use(express.urlencoded({ limit: "10mb", extended: true }));

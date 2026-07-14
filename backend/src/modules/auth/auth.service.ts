@@ -61,7 +61,10 @@ export const updateProfileData = async (userId: number, input: EditProfileInput)
 };
 
 export const addProfileImage = async (userId: number, profilePic: string) => {
-  const upload = await cloudinary.uploader.upload(profilePic, { resource_type: "image" });
+  const upload = await cloudinary.uploader.upload(profilePic, {
+    resource_type: "image",
+    folder: "messaging-app/profiles",
+  });
   try {
     const pic = await prisma.profilePic.create({ data: { userId, url: upload.secure_url } });
     return toProfilePicDto(pic);

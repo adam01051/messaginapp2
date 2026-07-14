@@ -27,7 +27,7 @@ const ChatContainer = () => {
 		closeChat,
 	} = useChatStore();
 
-	const { authUser, profilePics } = useAuthStore();
+	const { authUser, profilePics, socket } = useAuthStore();
 	const messageEndRef = useRef(null);
 
 	const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -58,9 +58,9 @@ const ChatContainer = () => {
 	useEffect(() => {
 		if (!selectedUser?.id) return;
 		getMessages(selectedUser.id);
-		subscribeToMessages();
-		return () => unsubscribeFromMessages();
-	}, [selectedUser?.id, subscribeToMessages, getMessages,unsubscribeFromMessages]);
+		subscribeToMessages(socket);
+		return () => unsubscribeFromMessages(socket);
+	}, [selectedUser?.id, socket, subscribeToMessages, getMessages,unsubscribeFromMessages]);
 
 	// Prepare profile pics for both users
 	useEffect(() => {

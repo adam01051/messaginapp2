@@ -1,9 +1,6 @@
 import { create } from "zustand";
 import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios";
-import { useAuthStore } from "./useAuthStore";
-
-
 
 export const useChatStore = create((set, get) => ({
 	messages: [],
@@ -22,8 +19,12 @@ export const useChatStore = create((set, get) => ({
 		try {
 			const res = await axiosInstance.post("/contacts", { username });
 			set({ addResults: res.data });
+			if (res.data.contact) get().upsertContact(res.data.contact);
 			set((state) => ({
-				selectedUser: { ...state.selectedUser, is_contact: true },
+				selectedUser:
+					state.selectedUser?.id === res.data.contactId
+						? { ...state.selectedUser, is_contact: true }
+						: state.selectedUser,
 			}));
 	
 
@@ -38,8 +39,7 @@ export const useChatStore = create((set, get) => ({
 	deleteUser: async (user) => {
 		try {
 			await axiosInstance.delete(`/contacts/${user.id}`);
-			set({ selectedUser: null });
-		    await get().getUsers();
+			get().removeContact(user.id);
 			
 			toast.success("Contact successfully deleted");
 		} catch (error) {
@@ -47,6 +47,49 @@ export const useChatStore = create((set, get) => ({
 			set({ addResults: [] });
 			toast.error("User deleting is failed");
 		}
+	},
+	upsertContact: (contact) => {
+		if (!contact?.id) return;
+		set((state) => ({
+			users: [
+				{ ...contact, is_contact: true },
+				...state.users.filter((user) => String(user.id) !== String(contact.id)),
+			],
+			selectedUser:
+				String(state.selectedUser?.id) === String(contact.id)
+					? { ...state.selectedUser, ...contact, is_contact: true }
+					: state.selectedUser,
+		}));
+	},
+	removeContact: (contactId) => {
+		set((state) => ({
+			users: state.users.filter((user) => String(user.id) !== String(contactId)),
+			selectedUser:
+				String(state.selectedUser?.id) === String(contactId) ? null : state.selectedUser,
+		}));
+	},
+	resetChatState: () =>
+		set({
+			messages: [],
+			users: [],
+			selectedUser: null,
+			nextCursor: null,
+			isNewMessage: null,
+			addResults: null,
+		}),
+	subscribeToContactEvents: (socket) => {
+		if (!socket) return;
+		socket.off("contactAdded");
+		socket.off("contactRemoved");
+		socket.on("contactAdded", ({ contact }) => {
+			get().upsertContact(contact);
+			toast.success(`${contact.name || contact.username} added you`);
+		});
+		socket.on("contactRemoved", ({ contactId }) => get().removeContact(contactId));
+	},
+	unsubscribeFromContactEvents: (socket) => {
+		socket?.off("contactAdded");
+		socket?.off("contactRemoved");
 	},
 
 	getUsers: async () => {
@@ -98,13 +141,11 @@ export const useChatStore = create((set, get) => ({
 			toast.error(error.response?.data?.message || "Failed to send message");
 		}
 	},
-	subscribeToMessages: () => {
+	subscribeToMessages: (socket) => {
 		const { selectedUser } = get();
-		if (!selectedUser) return;
+		if (!selectedUser || !socket) return;
 
-		const socket = useAuthStore.getState().socket;
-		if (!socket) return;
-
+		socket.off("newMessage");
 		socket.on("newMessage", (newMessage) => {
 			set((state) => {
 				const isCurrentChat = newMessage.sender_id === state.selectedUser?.id;
@@ -124,8 +165,7 @@ export const useChatStore = create((set, get) => ({
 		});
 	},
 
-	unsubscribeFromMessages: () => {
-		const socket = useAuthStore.getState().socket;
+	unsubscribeFromMessages: (socket) => {
 		socket?.off("newMessage");
 	},
 

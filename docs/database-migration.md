@@ -1,67 +1,62 @@
-# PostgreSQL migration runbook
+# Fresh managed PostgreSQL setup
 
-Use this runbook to adopt the checked-in Prisma baseline without replacing or deleting existing application data. Run every legacy-database step against a restored clone first. Never point a development or shadow URL at production.
+PostgreSQL stores the application data. Prisma is the ORM and migration client that connects the backend to PostgreSQL.
 
-## Required configuration
+## Create the database
 
-Set these variables in `backend/.env` or the shell running Prisma. Do not commit the file or print credentials in logs.
+Create a new PostgreSQL 16 service with the managed provider and configure:
+
+- an empty database named `messaging_app`;
+- an application user that owns the database;
+- required SSL connections;
+- network access from the deployed backend and from the developer IP used for the initial migration.
+
+Copy the provider's direct or session connection string. Do not use a transaction-pooler URL for migrations. URL-encode special characters in the username and password.
 
 ```text
-DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/CLONED_DATABASE?schema=public
-SHADOW_DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/EMPTY_SHADOW_DATABASE?schema=public
+postgresql://APP_USER:URL_ENCODED_PASSWORD@HOST:5432/messaging_app?schema=public&sslmode=require
 ```
 
-`DATABASE_URL` must identify the disposable clone during reconciliation. `SHADOW_DATABASE_URL` must identify a separate empty database that Prisma may reset.
+## Configure and initialize
 
-## Adopt an existing database
+Copy `backend/.env.example` to the ignored `backend/.env`, set `DATABASE_URL` to the real connection string, and replace `JWT_SECRET`. Do not commit or print the file.
 
-1. Create a PostgreSQL backup with the platform's normal backup process and restore it under a new database name. Confirm the source database is unchanged and the clone contains the expected row counts.
-2. Point `DATABASE_URL` at the clone and print introspection output without overwriting the checked-in schema:
-
-   ```sh
-   npm run prisma:pull:print --prefix backend > /tmp/messaging-app-introspected.prisma
-   ```
-
-3. Compare `/tmp/messaging-app-introspected.prisma` with `backend/prisma/schema.prisma`. Review every table, physical column name, type, length, nullability, default, sequence, unique constraint, index, foreign key, and delete/update action. Preserve physical snake_case names with `@map` and `@@map`.
-4. Ask Prisma to detect drift between the clone and the checked-in migration history:
-
-   ```sh
-   npm run prisma:verify:database --prefix backend
-   ```
-
-   The command exits `0` only when no difference is detected and exits `2` when drift exists. Reconcile drift with a reviewed Prisma migration; do not execute generated diff SQL directly against production.
-5. Only after introspection and drift review pass on the clone, record the inferred baseline as applied on that clone:
-
-   ```sh
-   cd backend
-   npx prisma migrate resolve --applied 00000000000000_baseline
-   npm run prisma:migrate:status
-   ```
-
-6. Run the database and application checks against the clone:
-
-   ```sh
-   RUN_DATABASE_TESTS=true npm test --prefix backend
-   npm run build --prefix backend
-   npm run lint --prefix frontend
-   npm run build --prefix frontend
-   ```
-
-Repeat the resolve step in production only during an approved deployment window, after a fresh rollback backup and after the restored clone has passed all checks. `migrate resolve` records migration history; it does not apply the baseline SQL.
-
-## Initialize an empty database
-
-For a new database with no application tables, point `DATABASE_URL` at the empty database and run:
+From the repository root, run:
 
 ```sh
+npm ci --prefix backend
+npm run prisma:validate --prefix backend
 npm run prisma:migrate:deploy --prefix backend
 npm run prisma:migrate:status --prefix backend
-npm run prisma:verify:database --prefix backend
-RUN_DATABASE_TESTS=true npm test --prefix backend
 ```
 
-Do not mark the baseline as resolved on an empty database; deploy it so Prisma creates the schema.
+`prisma migrate deploy` applies `00000000000000_baseline` to the empty database and creates the application tables, constraints, indexes, sequences, and Prisma migration history. Do not use `prisma migrate resolve` on an empty database.
 
-## Release gate
+Start the application and check database readiness:
 
-A production migration is ready only when the restored legacy clone has no unexplained drift, migration status is current, database integration tests pass, REST and Socket.IO smoke tests pass, rollback has been rehearsed, and no credentials or database dumps are included in version control. Cloudinary image flows require separate test credentials or a mock.
+```sh
+npm run dev --prefix backend
+npm run dev --prefix frontend
+curl http://localhost:5001/health/ready
+```
+
+The readiness response must be `{"status":"ready"}`.
+
+## Deploy and operate
+
+Store `DATABASE_URL`, `JWT_SECRET`, `CLIENT_ORIGIN`, Cloudinary values, and `NODE_ENV=production` in the backend host's secret manager. Build, release, and start each application version with:
+
+```sh
+npm run build
+npm run release
+npm start
+```
+
+Create every future schema change as a new Prisma migration and deploy it with the same release command. Do not edit production tables manually.
+
+## Production safety
+
+- Do not set `SHADOW_DATABASE_URL` for migration deployment; Prisma only needs it for development/diff workflows.
+- Never run with `RUN_DATABASE_TESTS=true` against `messaging_app`. Integration tests delete all application records and enforce a disposable database name ending in `_test`, `_testing`, `_ci`, or `_verify`.
+- Use a separate disposable database if database integration testing is needed.
+- Keep connection strings, database dumps, JWT secrets, and Cloudinary secrets outside version control.

@@ -2,6 +2,26 @@ import { AppError } from "../../lib/errors.js";
 import { prisma } from "../../lib/prisma.js";
 import { toProfilePicDto } from "../auth/auth.dto.js";
 
+type ContactUser = {
+  id: number;
+  name: string;
+  email: string;
+  username: string;
+  number: string | null;
+  profilePics: Array<{ id: number; url: string; userId: number }>;
+};
+
+const toContactDto = (user: ContactUser, lastMessageTime: Date | null = null) => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  username: user.username,
+  number: user.number,
+  last_message_time: lastMessageTime?.toISOString() ?? null,
+  is_contact: true,
+  profilePic: user.profilePics[0] ? toProfilePicDto(user.profilePics[0]) : null,
+});
+
 export const listContacts = async (userId: number) => {
   const [contacts, inbound, outbound] = await Promise.all([
     prisma.contact.findMany({ where: { userId }, select: { contactId: true } }),
@@ -28,16 +48,7 @@ export const listContacts = async (userId: number) => {
   });
 
   return users
-    .map((user) => ({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      username: user.username,
-      number: user.number,
-      last_message_time: lastMessage.get(user.id)?.toISOString() ?? null,
-      is_contact: contactIds.has(user.id),
-      profilePic: user.profilePics[0] ? toProfilePicDto(user.profilePics[0]) : null,
-    }))
+    .map((user) => ({ ...toContactDto(user, lastMessage.get(user.id) ?? null), is_contact: contactIds.has(user.id) }))
     .sort((a, b) => {
       if (!a.last_message_time) return 1;
       if (!b.last_message_time) return -1;
@@ -47,14 +58,50 @@ export const listContacts = async (userId: number) => {
 
 export const addContact = async (userId: number, ownUsername: string, username: string) => {
   if (username === ownUsername) throw new AppError(400, "You cannot add yourself as a contact", "SELF_CONTACT");
-  const contact = await prisma.user.findUnique({ where: { username }, select: { id: true } });
+  const [owner, contact] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      include: { profilePics: { take: 1, orderBy: { id: "desc" } } },
+    }),
+    prisma.user.findUnique({
+      where: { username },
+      include: { profilePics: { take: 1, orderBy: { id: "desc" } } },
+    }),
+  ]);
+  if (!owner) throw new AppError(401, "Unauthorized", "UNAUTHORIZED");
   if (!contact) throw new AppError(404, "User not found", "USER_NOT_FOUND");
-  await prisma.contact.create({ data: { userId, contactId: contact.id } });
-  return { success: true, contactId: contact.id };
+
+  const created = await prisma.$transaction((tx) =>
+    tx.contact.createMany({
+      data: [
+        { userId, contactId: contact.id },
+        { userId: contact.id, contactId: userId },
+      ],
+      skipDuplicates: true,
+    }),
+  );
+
+  return {
+    success: true,
+    contactId: contact.id,
+    contact: toContactDto(contact),
+    recipientId: contact.id,
+    recipientContact: toContactDto(owner),
+    created: created.count > 0,
+  };
 };
 
 export const deleteContact = async (userId: number, contactId: number) => {
-  const deleted = await prisma.contact.deleteMany({ where: { userId, contactId } });
+  const deleted = await prisma.$transaction((tx) =>
+    tx.contact.deleteMany({
+      where: {
+        OR: [
+          { userId, contactId },
+          { userId: contactId, contactId: userId },
+        ],
+      },
+    }),
+  );
   if (deleted.count === 0) throw new AppError(404, "Contact not found", "CONTACT_NOT_FOUND");
   return { success: true, contactId };
 };

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { axiosInstance } from "../lib/axios.js";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
+import { useChatStore } from "./useChatStore";
 
 
  
@@ -91,6 +92,7 @@ export const useAuthStore = create((set, get) => ({
 
 			toast.success("Logged out successfully");
 			get().disconnectSocket();
+			useChatStore.getState().resetChatState();
 		} catch (error) {
 			toast.error(error.response?.data?.message || "Logout failed");
 		}
@@ -132,16 +134,20 @@ export const useAuthStore = create((set, get) => ({
 		const { authUser } = get();
 		if (!authUser || get().socket?.connected) return;
 
-		const socket = io(BASE_URL, { withCredentials: true });
-		socket.connect();
+		const socket = io(BASE_URL, { withCredentials: true, autoConnect: false });
 
 		set({ socket: socket });
 
 		socket.on("getOnlineUsers", (userIds) => {
 			set({ onlineUsers: userIds });
 		});
+		useChatStore.getState().subscribeToContactEvents(socket);
+		socket.connect();
 	},
 	disconnectSocket: () => {
-		if (get().socket?.connected) get().socket.disconnect();
+		const socket = get().socket;
+		useChatStore.getState().unsubscribeFromContactEvents(socket);
+		if (socket?.connected) socket.disconnect();
+		set({ socket: null, onlineUsers: [] });
 	},
 }));
