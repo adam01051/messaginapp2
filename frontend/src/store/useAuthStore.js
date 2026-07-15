@@ -8,7 +8,7 @@ import { useChatStore } from "./useChatStore";
  
 
 const BASE_URL =
-	import.meta.env.MODE === "development" ? "http://localhost:5001" : "/";
+	import.meta.env.MODE === "development" ? "http://localhost:6001" : "/";
 	
 
 export const useAuthStore = create((set, get) => ({
