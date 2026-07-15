@@ -44,15 +44,13 @@ The readiness response must be `{"status":"ready"}`.
 
 ## Deploy and operate
 
-Store `DATABASE_URL`, `JWT_SECRET`, `CLIENT_ORIGIN`, Cloudinary values, and `NODE_ENV=production` in the backend host's secret manager. Build, release, and start each application version with:
+Store `DATABASE_URL`, optional `DIRECT_URL`, `JWT_SECRET`, `CLIENT_ORIGIN`, Cloudinary values, and `NODE_ENV=production` in `backend/.env`. Configure `frontend/.env` with the public `VITE_BACKEND_ORIGIN`. Deploy both services and backend migrations with:
 
 ```sh
-npm run build
-npm run release
-npm start
+./deploy.sh
 ```
 
-Create every future schema change as a new Prisma migration and deploy it with the same release command. Do not edit production tables manually.
+Create every future schema change as a new Prisma migration and deploy it with the same release command. Do not edit production tables manually. When runtime `DATABASE_URL` uses a pooler, set `DIRECT_URL` to the provider's direct/session connection so Prisma CLI operations avoid pooler advisory-lock contention.
 
 ## Production safety
 

@@ -49,13 +49,6 @@ const SignupPage = () => {
     if (success === true) signup(formData);
   };
 		
-	const handleGoogleSubmit = async () => {
-		
-		window.location.href = "http://localhost:6001/api/auth/google";
-		
-	};
-
-	
 	
   return (
 		<div className="min-h-screen grid lg:grid-cols-2">
@@ -184,16 +177,6 @@ const SignupPage = () => {
 							)}
 						</button>
 					</form>
-					<form onSubmit={handleGoogleSubmit}>
-						<button
-							type="button"
-							onClick={handleGoogleSubmit}
-							className="btn w-full"
-						>
-							Sign up with Google
-						</button>
-					</form>
-
 					<div className="text-center">
 						<p className="text-base-content/60">
 							Already have an account?{" "}

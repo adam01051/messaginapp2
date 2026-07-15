@@ -1,6 +1,6 @@
 # Chatty Messaging Application
 
-Chatty is a full-stack realtime messaging application built with React, Express, Socket.IO, Prisma, PostgreSQL, and Cloudinary. The production build runs as one Node service: Express serves the React application, REST API, and Socket.IO endpoint from the same origin.
+Chatty is a full-stack realtime messaging application built with React, Express, Socket.IO, Prisma, PostgreSQL, and Cloudinary. Development and VPS deployment run two independent services from this repository: the frontend on port `6002` and the backend on port `6001`.
 
 ## Features
 
@@ -16,11 +16,11 @@ Chatty is a full-stack realtime messaging application built with React, Express,
 ## Architecture
 
 ```text
-React + Zustand
-   ├── HTTPS REST ───────┐
+React + Zustand (:6002)
+   ├── REST /api ────────┐
    └── Socket.IO ────────┤
                          ▼
-              Express + Socket.IO
+             Express + Socket.IO (:6001)
                  ├── Prisma ─────── PostgreSQL
                  └── Cloudinary ─── Image assets
 ```
@@ -54,6 +54,7 @@ This avoids local `uploads/` storage, which is unreliable on hosts with ephemera
 - npm 10 or newer
 - A new PostgreSQL database
 - A Cloudinary account for image features and all production deployments
+- Git, Docker Engine, and the Docker Compose plugin on the VPS
 
 ## Local setup
 
@@ -64,15 +65,17 @@ npm ci --prefix backend
 npm ci --prefix frontend
 ```
 
-Copy the environment template and replace every placeholder:
+Copy both environment templates and replace every placeholder:
 
 ```sh
 cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
 ```
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `DATABASE_URL` | Yes | Direct/session PostgreSQL URL; `postgres://` and `postgresql://` are accepted |
+| `DATABASE_URL` | Yes | PostgreSQL runtime URL; direct/session is preferred |
+| `DIRECT_URL` | Pooled databases | Direct/session PostgreSQL URL used only by Prisma CLI migrations |
 | `JWT_SECRET` | Yes | Signs authentication cookies; use a long random secret |
 | `CLIENT_ORIGIN` | Production | Public application origin used by Express and Socket.IO CORS |
 | `CLOUDINARY_NAME` | Production/images | Cloudinary cloud name |
@@ -82,6 +85,7 @@ cp backend/.env.example backend/.env
 | `PORT` | No | Backend port; defaults to `6001` |
 | `LOG_LEVEL` | No | Pino log level; defaults to `info` |
 | `SHADOW_DATABASE_URL` | Prisma development only | Separate disposable shadow database for migration development/diffs |
+| `VITE_BACKEND_ORIGIN` | Frontend | Browser-visible backend origin, without `/api`; defaults to `http://localhost:6001` |
 
 Cloudinary variables must be configured together. Production startup fails early if they are missing.
 
@@ -100,7 +104,7 @@ npm run dev --prefix backend
 npm run dev --prefix frontend
 ```
 
-Open `http://localhost:6000`. The API and Socket.IO server run on `http://localhost:6001`.
+Open `http://localhost:6002`. The API and Socket.IO server run on `http://localhost:6001`.
 
 ## API and realtime contracts
 
@@ -160,48 +164,72 @@ GET /health/ready  PostgreSQL and required application-schema readiness
 
 ## Deployment
 
-The supported production layout is one Node service and one public origin. The repository includes a QuickMeds-style `docker-compose.yml`: it mounts the checked-out source into a pinned Node container, performs locked installs and production builds, deploys pending Prisma migrations, then starts Express.
+The supported VPS layout uses two Compose services from one Git checkout:
 
-On the VPS, create `backend/.env` from `backend/.env.example` and provide the production values. Do not commit that file. At minimum, set `NODE_ENV=production`, `CLIENT_ORIGIN` to the application's public origin, the managed `DATABASE_URL`, a production `JWT_SECRET`, and all Cloudinary credentials.
+```text
+http(s)://SERVER:6002  React static frontend
+http(s)://SERVER:6001  Express REST, health, and Socket.IO backend
+```
 
-Start or update the service from the repository root with the QuickMeds-style deployment script:
+Create both ignored environment files on the VPS:
+
+```sh
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+```
+
+Use these public values, replacing `SERVER` with the VPS hostname or IP:
+
+```env
+# backend/.env
+NODE_ENV=production
+PORT=6001
+CLIENT_ORIGIN=https://SERVER:6002
+DATABASE_URL=postgresql://...
+# DIRECT_URL=postgresql://...  # recommended when DATABASE_URL is pooled
+JWT_SECRET=replace-with-a-long-random-secret
+CLOUDINARY_NAME=...
+CLOUDINARY_KEY=...
+CLOUDINARY_SECRET=...
+```
+
+```env
+# frontend/.env
+VITE_BACKEND_ORIGIN=https://SERVER:6001
+```
+
+Deploy from a clean checkout:
 
 ```sh
 ./deploy.sh
-docker compose logs -f messaging-app
+docker compose logs -f messaging-backend messaging-frontend
 ```
 
-`deploy.sh` refuses to overwrite tracked local changes, runs `git pull --ff-only`, starts Compose, waits up to five minutes for `/health/ready`, and prints the resulting container status. Override the wait when a small VPS needs longer for locked installs and builds:
+Stop any development terminals before deployment because development and Compose use the same host ports. Allow inbound TCP `6002` for the frontend and `6001` for the backend only until a TLS endpoint/firewall policy replaces direct public access.
+
+`deploy.sh` refuses to overwrite tracked changes, runs `git pull --ff-only`, force-recreates both containers, removes obsolete Compose containers, waits for both health checks, and prints status. Increase the wait on a small VPS when needed:
 
 ```sh
 DEPLOY_WAIT_SECONDS=600 ./deploy.sh
 ```
 
-For the initial checkout, create `backend/.env` before running the script. Direct Compose commands remain available for diagnostics.
+The backend container performs a locked install and TypeScript build, deploys Prisma migrations with a bounded retry for transient advisory-lock contention, then starts Express. The frontend container waits for backend readiness, performs its own locked install and Vite build, and serves `frontend/dist` with SPA fallback on port `6002`.
 
-The production service is published on VPS port `6000` and mapped to Express on container port `6001`. The default deployment is equivalent to:
-
-```sh
-HOST_PORT=6000 ./deploy.sh
-```
-
-The Compose service executes this sequence inside the container:
+Useful operations:
 
 ```sh
-npm run build
-npm run release
-npm start
+docker compose ps
+docker compose logs -f messaging-backend messaging-frontend
+docker compose down
 ```
 
-- `build` installs locked backend/frontend dependencies, generates Prisma Client, compiles TypeScript, and builds React.
-- `release` applies pending Prisma migrations with `prisma migrate deploy`.
-- `start` launches Express, Socket.IO, and the compiled React application.
+Named `node_modules` volumes keep Linux container dependencies separate from local macOS dependencies. PostgreSQL and Cloudinary remain managed external services; Compose does not create database or upload volumes.
 
-Only one `messaging-app` container should run. Presence and socket routing currently use process memory, so do not use `docker compose up --scale`, PM2 cluster mode, or multiple VPS replicas until a shared Socket.IO adapter is introduced.
+Only one backend container should run. Presence and socket routing currently use process memory, so do not use Compose scaling, PM2 cluster mode, or multiple backend replicas until a shared Socket.IO adapter is introduced.
 
-No reverse proxy is included yet. The Compose port is directly published by the VPS; production browser authentication still requires HTTPS because production cookies are secure. Add a TLS endpoint before a public launch, but Nginx is not required by this Compose setup.
+No reverse proxy is included. Direct HTTP ports are sufficient for health/static smoke checks, but production authentication cookies are secure and therefore require HTTPS for real browser login. Add TLS termination before public launch; do not weaken cookie security.
 
-The container health check calls `/health/ready`, which verifies PostgreSQL connectivity and the required application schema. Cloudinary and PostgreSQL remain managed external services, so no local database or upload volume is created.
+Open firewall access only for the intended public ports. Keep PostgreSQL private to the backend/provider network whenever possible.
 
 After deployment, verify signup/login/logout, one-way contact addition, realtime first-message requests, conversation deletion, block/unblock in two sessions, text/image messaging, presence/reconnect behavior, SPA route refreshes, and both health endpoints.
 

@@ -1,9 +1,7 @@
 import axios from "axios";
+import { API_BASE_URL } from "../config/runtime.js";
 
 export const axiosInstance = axios.create({
-	baseURL:
-		import.meta.env.MODE === "development"
-			? "http://localhost:6001/api"
-			: "/api",
+	baseURL: API_BASE_URL,
 	withCredentials: true,
 });

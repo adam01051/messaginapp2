@@ -13,7 +13,7 @@ const schema = z.object({
       message: "DATABASE_URL must start with postgresql:// or postgres://",
     }),
   JWT_SECRET: z.string().min(12, "JWT_SECRET must contain at least 12 characters"),
-  CLIENT_ORIGIN: z.string().url().default("http://localhost:6000"),
+  CLIENT_ORIGIN: z.string().url().default("http://localhost:6002"),
   CLOUDINARY_NAME: z.string().optional(),
   CLOUDINARY_KEY: z.string().optional(),
   CLOUDINARY_SECRET: z.string().optional(),

@@ -1,9 +1,11 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
-const datasource = process.env.DATABASE_URL
+const migrationUrl = process.env.DIRECT_URL?.trim() || process.env.DATABASE_URL;
+
+const datasource = migrationUrl
   ? {
-      url: process.env.DATABASE_URL,
+      url: migrationUrl,
       ...(process.env.SHADOW_DATABASE_URL ? { shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL } : {}),
     }
   : undefined;
@@ -13,7 +15,7 @@ export default defineConfig({
   migrations: {
     path: "prisma/migrations",
   },
-  // Generate/validate do not need a connection. Database commands fail safely
-  // until DATABASE_URL explicitly identifies the intended PostgreSQL database.
+  // Prisma CLI commands prefer DIRECT_URL when runtime traffic uses a pooler.
+  // Generate/validate still work without either connection variable.
   datasource,
 });

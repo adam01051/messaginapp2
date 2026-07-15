@@ -1,26 +1,58 @@
 services:
-  messaging-app:
-    container_name: messaging-app
-    restart: always
-    image: node:20.19.6
+  messaging-backend:
+    container_name: messaging-backend
+    image: node:22.17.0
+    restart: unless-stopped
     init: true
     ports:
-      - "${HOST_PORT:-6000}:6001"
+      - "6001:6001"
     environment:
       NODE_ENV: production
       PORT: 6001
     env_file:
       - backend/.env
     volumes:
-      - ./:/usr/src/messaging-app
-    working_dir: /usr/src/messaging-app
-    command: bash -c "npm run build && npm run release && npm start"
+      - ./backend:/usr/src/messaging-backend
+      - backend-node-modules:/usr/src/messaging-backend/node_modules
+    working_dir: /usr/src/messaging-backend
+    command: bash -c "npm ci --include=dev && npm run build && bash scripts/start-production.sh"
     healthcheck:
       test:
         - CMD
         - node
         - -e
-        - fetch('http://127.0.0.1:6001/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))
+        - fetch('http://127.0.0.1:6001/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+    stop_grace_period: 30s
+    networks:
+      - messaging-network
+
+  messaging-frontend:
+    container_name: messaging-frontend
+    image: node:22.17.0
+    restart: unless-stopped
+    init: true
+    ports:
+      - "6002:6002"
+    env_file:
+      - frontend/.env
+    volumes:
+      - ./frontend:/usr/src/messaging-frontend
+      - frontend-node-modules:/usr/src/messaging-frontend/node_modules
+    working_dir: /usr/src/messaging-frontend
+    command: bash -c "npm ci --include=dev && npm run build && npm start"
+    depends_on:
+      messaging-backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - fetch('http://127.0.0.1:6002').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))
       interval: 30s
       timeout: 5s
       retries: 5
@@ -32,3 +64,7 @@ services:
 networks:
   messaging-network:
     driver: bridge
+
+volumes:
+  backend-node-modules:
+  frontend-node-modules:

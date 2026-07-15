@@ -23,6 +23,17 @@ describe("application boundaries", () => {
     expect(response.body.code).toBe("UNAUTHORIZED");
   });
 
+  it("permits credentialed requests from the configured frontend origin", async () => {
+    const response = await request(app)
+      .options("/api/auth/check")
+      .set("Origin", "http://localhost:6002")
+      .set("Access-Control-Request-Method", "GET");
+
+    expect(response.status).toBe(204);
+    expect(response.headers["access-control-allow-origin"]).toBe("http://localhost:6002");
+    expect(response.headers["access-control-allow-credentials"]).toBe("true");
+  });
+
   it("returns a structured response for unknown routes", async () => {
     const response = await request(app).get("/missing");
     expect(response.status).toBe(404);

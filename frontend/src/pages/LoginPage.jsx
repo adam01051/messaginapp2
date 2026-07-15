@@ -105,17 +105,6 @@ const LoginPage = () => {
 						</button>
 					</form>
 					
-						<button
-							type="button"
-					  onClick={() => {
-						window.location.href = "http://localhost:6001/api/auth/google";
-							}}
-							className="btn w-full"
-						>
-							Log in with Google
-						</button>
-					
-
 					<div className="text-center">
 						<p className="text-base-content/60">
 							Don&apos;t have an account?{" "}

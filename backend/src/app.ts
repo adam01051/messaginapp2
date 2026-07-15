@@ -1,6 +1,4 @@
 import { randomUUID } from "node:crypto";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
@@ -42,13 +40,6 @@ export const createApp = () => {
   app.use("/api/blocks", blockRouter);
   app.use("/api/contacts", contactRouter);
   app.use("/api/messages", messageRouter);
-
-  if (env.NODE_ENV === "production") {
-    const currentDir = path.dirname(fileURLToPath(import.meta.url));
-    const frontendDist = path.resolve(currentDir, "../../frontend/dist");
-    app.use(express.static(frontendDist));
-    app.get("*", (_req, res) => res.sendFile(path.join(frontendDist, "index.html")));
-  }
 
   app.use(notFoundHandler);
   app.use(errorHandler);
