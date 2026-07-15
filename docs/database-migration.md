@@ -37,7 +37,7 @@ Start the application and check database readiness:
 ```sh
 npm run dev --prefix backend
 npm run dev --prefix frontend
-curl http://localhost:5001/health/ready
+curl http://localhost:6001/health/ready
 ```
 
 The readiness response must be `{"status":"ready"}`.

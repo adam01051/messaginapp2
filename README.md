@@ -6,7 +6,7 @@ Chatty is a full-stack realtime messaging application built with React, Express,
 
 - JWT authentication in an HTTP-only cookie
 - Realtime presence across multiple tabs and devices
-- Mutual contacts with realtime add/remove notifications
+- Directional contacts, realtime message requests, and persistent user blocking
 - Cursor-paginated conversations and realtime message delivery
 - Message images and profile-picture history stored in Cloudinary
 - PostgreSQL persistence through Prisma ORM and versioned migrations
@@ -25,7 +25,7 @@ React + Zustand
                  └── Cloudinary ─── Image assets
 ```
 
-PostgreSQL stores users, contact relationships, messages, and Cloudinary URLs. Image bytes are never written to the application filesystem or PostgreSQL.
+PostgreSQL stores users, contact/block relationships, messages, Cloudinary URLs, and attachment public IDs. Image bytes are never written to the application filesystem or PostgreSQL.
 
 ```text
 Browser file → data URL → Express → Cloudinary → secure URL → PostgreSQL
@@ -79,7 +79,7 @@ cp backend/.env.example backend/.env
 | `CLOUDINARY_KEY` | Production/images | Cloudinary API key |
 | `CLOUDINARY_SECRET` | Production/images | Cloudinary API secret |
 | `NODE_ENV` | No | `development`, `test`, or `production` |
-| `PORT` | No | Backend port; defaults to `5001` |
+| `PORT` | No | Backend port; defaults to `6001` |
 | `LOG_LEVEL` | No | Pino log level; defaults to `info` |
 | `SHADOW_DATABASE_URL` | Prisma development only | Separate disposable shadow database for migration development/diffs |
 
@@ -100,7 +100,7 @@ npm run dev --prefix backend
 npm run dev --prefix frontend
 ```
 
-Open `http://localhost:5173`. The API and Socket.IO server run on `http://localhost:5001`.
+Open `http://localhost:6000`. The API and Socket.IO server run on `http://localhost:6001`.
 
 ## API and realtime contracts
 
@@ -113,9 +113,12 @@ Open `http://localhost:5173`. The API and Socket.IO server run on `http://localh
 | `PUT` | `/api/auth/edit-profile` | Update profile data |
 | `PUT` | `/api/auth/update-profile` | Upload a profile picture to Cloudinary |
 | `GET` | `/api/auth/usersearch` | Search for users by username |
-| `GET` | `/api/contacts` | List mutual contacts and inbound conversations |
-| `POST` | `/api/contacts` | Add a mutual contact |
-| `DELETE` | `/api/contacts/:contactId` | Remove both contact directions without deleting messages |
+| `GET` | `/api/contacts` | List the user's contacts and inbound conversations |
+| `POST` | `/api/contacts` | Add a one-way contact for the authenticated user |
+| `DELETE` | `/api/contacts/:contactId` | Remove the directional contact and permanently delete the shared conversation |
+| `GET` | `/api/blocks` | List users blocked by the authenticated user |
+| `POST` | `/api/blocks/:userId` | Block a user and delete both contacts and the shared conversation |
+| `DELETE` | `/api/blocks/:userId` | Unblock a user without restoring contacts or messages |
 | `GET` | `/api/messages/:userId` | Load a cursor-paginated conversation |
 | `POST` | `/api/messages/send/:userId` | Persist and emit a text/image message |
 
@@ -125,10 +128,12 @@ Server-to-client Socket.IO events:
 | --- | --- | --- |
 | `getOnlineUsers` | `string[]` | Current online user IDs |
 | `newMessage` | `MessageDto` | Newly committed message for the recipient |
-| `contactAdded` | `{ contact: ContactDto }` | Realtime mutual-contact sidebar update and notification |
-| `contactRemoved` | `{ contactId: number }` | Realtime contact removal |
+| `conversationUpdated` | `{ contact: ContactDto }` | Insert or move the sender in the recipient's sidebar after a committed message |
+| `conversationReset` | `{ userId, contact }` | Clear deleted history and remove or retain the peer's remaining contact |
 
-Contact events are sent only after the Prisma transaction commits. If the recipient is offline, PostgreSQL preserves the relationship and the sidebar is reconstructed after login.
+Explicit contacts are directional: adding another user does not add you to their contacts. An incoming message appears as a request with `is_contact: false`; the recipient can accept or block it. Deleting a contact permanently deletes the shared conversation for both users but does not prevent future contact. Blocking removes both contact directions and history and prevents add/load/send operations in either direction until the blocker unblocks the user from the Profile page. Realtime events are emitted only after database commits.
+
+The sidebar combines both relationship types: saved users are labeled `Contact`, while unsaved inbound senders are labeled `New message request`. Active conversations sort by newest message, saved contacts without messages sort alphabetically, and blocked users never appear. Loading failures show a retry state instead of stale contacts.
 
 ## Validation
 
@@ -150,12 +155,37 @@ Health endpoints:
 
 ```text
 GET /health/live   process liveness
-GET /health/ready  PostgreSQL readiness
+GET /health/ready  PostgreSQL and required application-schema readiness
 ```
 
 ## Deployment
 
-The supported production layout is one Node service and one public origin. Configure the environment variables in the host's secret manager, then use:
+The supported production layout is one Node service and one public origin. The repository includes a QuickMeds-style `docker-compose.yml`: it mounts the checked-out source into a pinned Node container, performs locked installs and production builds, deploys pending Prisma migrations, then starts Express.
+
+On the VPS, create `backend/.env` from `backend/.env.example` and provide the production values. Do not commit that file. At minimum, set `NODE_ENV=production`, `CLIENT_ORIGIN` to the application's public origin, the managed `DATABASE_URL`, a production `JWT_SECRET`, and all Cloudinary credentials.
+
+Start or update the service from the repository root with the QuickMeds-style deployment script:
+
+```sh
+./deploy.sh
+docker compose logs -f messaging-app
+```
+
+`deploy.sh` refuses to overwrite tracked local changes, runs `git pull --ff-only`, starts Compose, waits up to five minutes for `/health/ready`, and prints the resulting container status. Override the wait when a small VPS needs longer for locked installs and builds:
+
+```sh
+DEPLOY_WAIT_SECONDS=600 ./deploy.sh
+```
+
+For the initial checkout, create `backend/.env` before running the script. Direct Compose commands remain available for diagnostics.
+
+The production service is published on VPS port `6000` and mapped to Express on container port `6001`. The default deployment is equivalent to:
+
+```sh
+HOST_PORT=6000 ./deploy.sh
+```
+
+The Compose service executes this sequence inside the container:
 
 ```sh
 npm run build
@@ -167,9 +197,13 @@ npm start
 - `release` applies pending Prisma migrations with `prisma migrate deploy`.
 - `start` launches Express, Socket.IO, and the compiled React application.
 
-Set `NODE_ENV=production`, `CLIENT_ORIGIN=https://your-domain.example`, the managed `DATABASE_URL`, a production `JWT_SECRET`, and all Cloudinary credentials. Configure the host's readiness probe as `/health/ready` and ensure WebSocket upgrades are supported.
+Only one `messaging-app` container should run. Presence and socket routing currently use process memory, so do not use `docker compose up --scale`, PM2 cluster mode, or multiple VPS replicas until a shared Socket.IO adapter is introduced.
 
-After deployment, verify signup/login/logout, mutual contact notifications in two sessions, text/image messaging, presence/reconnect behavior, SPA route refreshes, and both health endpoints.
+No reverse proxy is included yet. The Compose port is directly published by the VPS; production browser authentication still requires HTTPS because production cookies are secure. Add a TLS endpoint before a public launch, but Nginx is not required by this Compose setup.
+
+The container health check calls `/health/ready`, which verifies PostgreSQL connectivity and the required application schema. Cloudinary and PostgreSQL remain managed external services, so no local database or upload volume is created.
+
+After deployment, verify signup/login/logout, one-way contact addition, realtime first-message requests, conversation deletion, block/unblock in two sessions, text/image messaging, presence/reconnect behavior, SPA route refreshes, and both health endpoints.
 
 ## Troubleshooting
 
@@ -183,9 +217,6 @@ After deployment, verify signup/login/logout, mutual contact notifications in tw
 
 A mobile client is intentionally deferred. The existing REST DTOs, JWT-cookie authentication boundary, Cloudinary URLs, and Socket.IO events are documented and should remain backward compatible when mobile work begins.
 
-## Project records
+## Database documentation
 
 - [Fresh PostgreSQL setup](docs/database-migration.md)
-- [Architecture](docs/ai/architecture.md)
-- [Current project state](docs/ai/project-state.md)
-- [AI-assisted change log](docs/ai/change-log.md)
