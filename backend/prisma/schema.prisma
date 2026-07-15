@@ -1,0 +1,79 @@
+generator client {
+  provider               = "prisma-client"
+  output                 = "../src/generated/prisma"
+  runtime                = "nodejs"
+  moduleFormat           = "esm"
+  generatedFileExtension = "ts"
+  importFileExtension    = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id               Int           @id @default(autoincrement())
+  name             String        @db.VarChar(100)
+  email            String        @unique @db.VarChar(255)
+  username         String        @unique @db.VarChar(100)
+  passwordHash     String        @map("password_")
+  number           String?       @db.VarChar(30)
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamp(6)
+  profilePics      ProfilePic[]
+  contacts         Contact[]     @relation("ContactOwner")
+  contactOf        Contact[]     @relation("ContactTarget")
+  blocksInitiated  BlockedUser[] @relation("Blocker")
+  blocksReceived   BlockedUser[] @relation("BlockedUser")
+  sentMessages     Message[]     @relation("MessageSender")
+  receivedMessages Message[]     @relation("MessageReceiver")
+
+  @@map("users")
+}
+
+model ProfilePic {
+  id     Int    @id @default(autoincrement()) @map("profile_id")
+  url    String @map("profile_url")
+  userId Int    @map("user_ref")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, id(sort: Desc)], map: "profile_pics_user_ref_profile_id_idx")
+  @@map("profile_pics")
+}
+
+model Contact {
+  userId    Int  @map("user_id")
+  contactId Int  @map("contact_id")
+  user      User @relation("ContactOwner", fields: [userId], references: [id], onDelete: Cascade)
+  contact   User @relation("ContactTarget", fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@id([userId, contactId])
+  @@map("contacts")
+}
+
+model BlockedUser {
+  blockerId Int      @map("blocker_id")
+  blockedId Int      @map("blocked_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  blocker   User     @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked   User     @relation("BlockedUser", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@id([blockerId, blockedId])
+  @@index([blockedId], map: "blocked_users_blocked_id_idx")
+  @@map("blocked_users")
+}
+
+model Message {
+  id            Int      @id @default(autoincrement())
+  senderId      Int      @map("sender_id")
+  receiverId    Int      @map("receiver_id")
+  content       String?
+  image         String?
+  imagePublicId String?  @map("image_public_id")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  sender        User     @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver      User     @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([senderId, receiverId, createdAt(sort: Desc)], map: "messages_sender_receiver_created_idx")
+  @@index([receiverId, senderId, createdAt(sort: Desc)], map: "messages_receiver_sender_created_idx")
+  @@map("messages")
+}

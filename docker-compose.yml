@@ -1,0 +1,34 @@
+services:
+  messaging-app:
+    container_name: messaging-app
+    restart: always
+    image: node:20.19.6
+    init: true
+    ports:
+      - "${HOST_PORT:-6000}:6001"
+    environment:
+      NODE_ENV: production
+      PORT: 6001
+    env_file:
+      - backend/.env
+    volumes:
+      - ./:/usr/src/messaging-app
+    working_dir: /usr/src/messaging-app
+    command: bash -c "npm run build && npm run release && npm start"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - fetch('http://127.0.0.1:6001/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+    stop_grace_period: 30s
+    networks:
+      - messaging-network
+
+networks:
+  messaging-network:
+    driver: bridge

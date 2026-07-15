@@ -108,7 +108,7 @@ const LoginPage = () => {
 						<button
 							type="button"
 					  onClick={() => {
-						window.location.href = "http://localhost:5001/api/auth/google";
+						window.location.href = "http://localhost:6001/api/auth/google";
 							}}
 							className="btn w-full"
 						>

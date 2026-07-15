@@ -2,11 +2,27 @@
 	"name": "backend",
 	"version": "1.0.0",
 	"description": "messaging application ",
-	"main": "src/index.js",
+	"main": "dist/index.js",
 	"type": "module",
 	"scripts": {
-		"dev": "nodemon src/index.js",
-		"start": "node src/index.js"
+		"dev": "tsx watch src/index.ts",
+		"build": "prisma generate && tsc",
+		"start": "node dist/index.js",
+		"typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
+		"test": "prisma generate && vitest run",
+		"test:database": "RUN_DATABASE_TESTS=true prisma generate && RUN_DATABASE_TESTS=true vitest run src/database.integration.test.ts",
+		"test:watch": "vitest",
+		"prisma:generate": "prisma generate",
+		"prisma:validate": "prisma validate",
+		"prisma:pull": "prisma db pull",
+		"prisma:pull:print": "prisma db pull --print",
+		"prisma:migrate:dev": "prisma migrate dev",
+		"prisma:migrate:deploy": "prisma migrate deploy",
+		"prisma:migrate:status": "prisma migrate status",
+		"prisma:verify:database": "prisma migrate diff --from-migrations prisma/migrations --to-config-datasource --exit-code"
+	},
+	"engines": {
+		"node": ">=20.19.0"
 	},
 	"repository": {
 		"type": "git",
@@ -22,24 +38,35 @@
 	},
 	"homepage": "https://github.com/adam01051/messaging_application#readme",
 	"dependencies": {
+		"@prisma/adapter-pg": "^7.8.0",
+		"@prisma/client": "^7.8.0",
 		"bcryptjs": "^3.0.2",
 		"cloudinary": "^2.6.0",
 		"cookie-parser": "^1.4.7",
 		"cors": "^2.8.5",
 		"dotenv": "^16.6.1",
 		"express": "^4.21.2",
-		"express-session": "^1.18.2",
+		"express-rate-limit": "^8.5.2",
+		"helmet": "^8.2.0",
 		"jsonwebtoken": "^9.0.2",
-		"mongodb": "^6.15.0",
-		"mongoose": "^8.13.0",
-		"oauth2": "^0.0.1",
-		"passport": "^0.7.0",
-		"passport-google-oauth2": "^0.2.0",
-		"passport-google-oauth20": "^2.0.0",
 		"pg": "^8.16.3",
-		"socket.io": "^4.8.1"
+		"pino": "^10.3.1",
+		"pino-http": "^11.0.0",
+		"socket.io": "^4.8.1",
+		"zod": "^4.4.3"
 	},
 	"devDependencies": {
-		"nodemon": "^3.1.9"
+		"@types/cookie-parser": "^1.4.10",
+		"@types/cors": "^2.8.19",
+		"@types/express": "^5.0.6",
+		"@types/jsonwebtoken": "^9.0.10",
+		"@types/node": "^26.1.1",
+		"@types/supertest": "^7.2.0",
+		"prisma": "^7.8.0",
+		"socket.io-client": "^4.8.1",
+		"supertest": "^7.2.2",
+		"tsx": "^4.23.0",
+		"typescript": "^7.0.2",
+		"vitest": "^4.1.10"
 	}
 }

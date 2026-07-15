@@ -90,6 +90,7 @@ out
 # Nuxt.js build / generate output
 .nuxt
 dist
+backend/src/generated/prisma/
 
 # Gatsby files
 .cache/
@@ -134,3 +135,12 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Local AI and agent workflow files
+AGENTS.md
+docs/ai/
+skills/
+.agents/
+.codex/
+.claude/
+.cursor/

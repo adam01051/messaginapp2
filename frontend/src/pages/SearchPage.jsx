@@ -5,29 +5,19 @@ import { useChatStore } from "../store/useChatStore";
 
 const SearchPage = () => {
 	const [username, setUsername] = useState("");
-	const { searchUser, searchResults, addResults, profilePics } = useAuthStore();
+	const { searchUser, searchResults } = useAuthStore();
 	
-	const { addUser } = useChatStore();
-	const [userPics, setUserPics] = useState([]);
+	const { addUser, addResults } = useChatStore();
+	const [addedUserId, setAddedUserId] = useState(null);
 	const handleSearch = () => {
 		searchUser(username); 
 
 		
 	};
-	useEffect(() => {
-		if (profilePics && searchResults && searchResults.length > 0) {
-			const pics = profilePics.filter(
-				(pic) => pic.user_ref === searchResults[0].id
-			);
-			setUserPics(pics);
-		} else {
-			setUserPics([]); // reset if no search results
-		}
-	}, [searchResults, profilePics]);
-	const handleAdd = () => {
-		
-        addUser(username);
-    }
+	const handleAdd = async (user) => {
+		await addUser(user.username);
+		setAddedUserId(user.id);
+	};
 	
 	
 	useEffect(() => {
@@ -79,9 +69,7 @@ const SearchPage = () => {
 														<div className="mask mask-squircle h-12 w-12">
 															<img
 																src={
-																	userPics.find(
-																		(pic) => pic.user_ref === user.id
-																	)?.profile_url || "/avatar.png"
+															user.profilePic?.profile_url || "/avatar.png"
 																}
 																alt={user.name}
 															/>
@@ -93,14 +81,14 @@ const SearchPage = () => {
 												</div>
 											</td>
 											<th>
-												{addResults?.success ? (
+								{addResults?.success && addedUserId === user.id ? (
 													<div className="badge badge-success gap-2 h-5">
 														<Check className="h-5 w-4" />
 														Done
 													</div>
 												) : (
 													<button
-														onClick={handleAdd}
+															onClick={() => handleAdd(user)}
 														className="btn btn-ghost btn-xs"
 													>
 														Add Contact

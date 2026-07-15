@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuthStore } from "../store/useAuthStore";
-import { Camera, Mail, User, Contact } from "lucide-react";
+import { useChatStore } from "../store/useChatStore";
+import { Camera, Mail, User, Contact, ShieldOff } from "lucide-react";
 
 // Lightbox imports
 import Lightbox from "yet-another-react-lightbox";
@@ -18,6 +19,7 @@ const ProfilePage = () => {
 		editProfileData,
 		profilePics,
 	} = useAuthStore();
+	const { blockedUsers, isBlockedUsersLoading, blockedUsersError, getBlockedUsers, unblockUser } = useChatStore();
 	const [selectedImg, setSelectedImg] = useState(null);
 	const [lightboxOpen, setLightboxOpen] = useState(false);
 	const [userPics, setUserPics] = useState([]);
@@ -25,14 +27,13 @@ const ProfilePage = () => {
 
 	useEffect(() => {
 		
-		if (profilePics && authUser) {
-			
-			const pics = profilePics.filter((pic) => pic.user_ref === authUser.id);
-			
-			setUserPics(pics);
-		}
+		if (profilePics && authUser) setUserPics(profilePics);
 		
 	}, [authUser, profilePics]);
+
+	useEffect(() => {
+		getBlockedUsers();
+	}, [getBlockedUsers]);
 
 	const [prototype1, setPrototype1] = useState({
 		id: "",
@@ -207,6 +208,44 @@ const ProfilePage = () => {
 								<span className="text-green-500">Active</span>
 							</div>
 						</div>
+					</div>
+
+					<div className="mt-6 bg-base-300 rounded-xl p-6">
+						<div className="flex items-center gap-2 mb-4">
+							<ShieldOff className="w-5 h-5" />
+							<h2 className="text-lg font-medium">Blocked users</h2>
+						</div>
+						{isBlockedUsersLoading ? (
+							<p className="text-sm text-zinc-400">Loading blocked users...</p>
+						) : blockedUsersError ? (
+							<div className="flex items-center justify-between gap-3">
+								<p className="text-sm text-error">{blockedUsersError}</p>
+								<button type="button" className="btn btn-sm" onClick={getBlockedUsers}>Retry</button>
+							</div>
+						) : blockedUsers.length === 0 ? (
+							<p className="text-sm text-zinc-400">You have not blocked anyone.</p>
+						) : (
+							<div className="space-y-3">
+								{blockedUsers.map((user) => (
+									<div key={user.id} className="flex items-center justify-between gap-3 rounded-lg bg-base-200 p-3">
+										<div className="flex items-center gap-3 min-w-0">
+											<img
+												src={user.profilePic?.profile_url || "/avatar.png"}
+												alt={user.name}
+												className="size-11 rounded-full object-cover"
+											/>
+											<div className="min-w-0">
+												<p className="font-medium truncate">{user.name}</p>
+												<p className="text-sm text-zinc-400 truncate">@{user.username}</p>
+											</div>
+										</div>
+										<button type="button" className="btn btn-sm" onClick={() => unblockUser(user.id)}>
+											Unblock
+										</button>
+									</div>
+								))}
+							</div>
+						)}
 					</div>
 				</div>
 			</div>

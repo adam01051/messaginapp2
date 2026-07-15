@@ -1,7 +1,7 @@
 import { X, User, Mail,Contact } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
-import {  useEffect ,useState} from "react";
+import { useEffect, useState } from "react";
 import "react-medium-image-zoom/dist/styles.css";
 
 import Lightbox from "yet-another-react-lightbox";
@@ -13,9 +13,9 @@ import "yet-another-react-lightbox/plugins/counter.css";
 
 
 const ChatHeader = () => {
-	const { selectedUser, getUsers, deleteUser, addUser } =
+	const { selectedUser, deleteUser, blockUser, addUser } =
 		useChatStore();
-	const { onlineUsers, profilePics } = useAuthStore();
+	const { onlineUsers } = useAuthStore();
 	const [userPics, setUserPics] = useState([]);
 	const [lightboxOpen, setLightboxOpen] = useState(false);
 
@@ -24,29 +24,21 @@ const ChatHeader = () => {
 		
 
 	
-		if (profilePics && selectedUser) {
-
-			const pics = profilePics.filter(
-				(pic) => pic.user_ref === selectedUser.id
-			);
-
-			setUserPics(pics);
-		}
-	}, [profilePics, selectedUser]);
+		setUserPics(selectedUser?.profilePic ? [selectedUser.profilePic] : []);
+	}, [selectedUser]);
 
 	const handleAdd = async () => {
 		await addUser(selectedUser.username); // wait for backend
-	
-		await getUsers(); // refresh contact list
 	};
 
 	const deleteContact = async () => {
-		deleteUser(selectedUser);
-		await getUsers();
-		
-		console.log(selectedUser);
-		
-	
+		if (!window.confirm("Delete this contact and permanently delete all messages for both users?")) return;
+		await deleteUser(selectedUser);
+	};
+
+	const handleBlock = async () => {
+		if (!window.confirm(`Block ${selectedUser.name || selectedUser.username} and permanently delete this conversation?`)) return;
+		await blockUser(selectedUser);
 	};
 	
 	
@@ -119,7 +111,7 @@ const ChatHeader = () => {
 									Accept
 								</button>
 								<button
-									onClick={deleteContact}
+									onClick={handleBlock}
 									className="btn btn-sm btn-error mx-3"
 								>
 									Block
@@ -208,11 +200,19 @@ const ChatHeader = () => {
 									</p>
 								</div>
 								<div className="flex justify-start">
+									{selectedUser?.is_contact && (
+										<button
+											onClick={deleteContact}
+											className="btn btn-sm btn-error "
+										>
+											Delete contact
+										</button>
+									)}
 									<button
-										onClick={deleteContact}
-										className="btn btn-sm btn-error "
+										onClick={handleBlock}
+										className="btn btn-sm btn-warning ml-3"
 									>
-										Delete contact
+										Block user
 									</button>
 								</div>
 							</div>

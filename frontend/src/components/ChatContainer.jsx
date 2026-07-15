@@ -19,13 +19,15 @@ const ChatContainer = () => {
 		messages,
 		getMessages,
 		isMessagesLoading,
+		isOlderMessagesLoading,
+		nextCursor,
 		selectedUser,
 		subscribeToMessages,
 		unsubscribeFromMessages,
 		closeChat,
 	} = useChatStore();
 
-	const { authUser, profilePics } = useAuthStore();
+	const { authUser, profilePics, socket } = useAuthStore();
 	const messageEndRef = useRef(null);
 
 	const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -56,9 +58,9 @@ const ChatContainer = () => {
 	useEffect(() => {
 		if (!selectedUser?.id) return;
 		getMessages(selectedUser.id);
-		subscribeToMessages();
-		return () => unsubscribeFromMessages();
-	}, [selectedUser?.id, subscribeToMessages, getMessages,unsubscribeFromMessages]);
+		subscribeToMessages(socket);
+		return () => unsubscribeFromMessages(socket);
+	}, [selectedUser?.id, socket, subscribeToMessages, getMessages,unsubscribeFromMessages]);
 
 	// Prepare profile pics for both users
 	useEffect(() => {
@@ -66,13 +68,7 @@ const ChatContainer = () => {
 			setUserPics(profilePics.filter((pic) => pic.user_ref === authUser.id));
 			
 		}
-		if (profilePics && selectedUser) {
-			setSelectedUserPics(
-				profilePics.filter((pic) => pic.user_ref === selectedUser.id)
-				
-			);
-			
-		}
+		setSelectedUserPics(selectedUser?.profilePic ? [selectedUser.profilePic] : []);
 	}, [profilePics, authUser, selectedUser]);
 
 	// Scroll to bottom on new messages
@@ -108,6 +104,18 @@ const ChatContainer = () => {
 			<ChatHeader />
 
 			<div className="flex-1 overflow-y-auto p-4 space-y-4">
+				{nextCursor && (
+					<div className="flex justify-center">
+						<button
+							type="button"
+							className="btn btn-sm btn-ghost"
+							disabled={isOlderMessagesLoading}
+							onClick={() => getMessages(selectedUser.id, true)}
+						>
+							{isOlderMessagesLoading ? "Loading..." : "Load older messages"}
+						</button>
+					</div>
+				)}
 				{messages.map((message) => {
 					const isAuthUserMsg =
 						String(message.sender_id) === String(authUser.id);
