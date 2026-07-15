@@ -14,6 +14,7 @@ const schema = z.object({
     }),
   JWT_SECRET: z.string().min(12, "JWT_SECRET must contain at least 12 characters"),
   CLIENT_ORIGIN: z.string().url().default("http://localhost:6002"),
+  COOKIE_SECURE: z.enum(["true", "false"]).transform((value) => value === "true").optional(),
   CLOUDINARY_NAME: z.string().optional(),
   CLOUDINARY_KEY: z.string().optional(),
   CLOUDINARY_SECRET: z.string().optional(),

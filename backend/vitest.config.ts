@@ -11,6 +11,7 @@ export default defineConfig({
       DATABASE_URL: databaseUrl,
       JWT_SECRET: "test-only-secret-key",
       CLIENT_ORIGIN: "http://localhost:6002",
+      COOKIE_SECURE: "false",
       LOG_LEVEL: "silent",
     },
     coverage: { reporter: ["text", "html"] },

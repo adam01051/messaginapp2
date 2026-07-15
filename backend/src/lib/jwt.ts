@@ -3,6 +3,7 @@ import type { Response } from "express";
 import { env } from "../config/env.js";
 
 const COOKIE_NAME = "jwt";
+const cookieIsSecure = env.COOKIE_SECURE ?? env.NODE_ENV === "production";
 
 export const signToken = (userId: number) => jwt.sign({ userId }, env.JWT_SECRET, { expiresIn: "7d" });
 
@@ -13,7 +14,7 @@ export const setAuthCookie = (res: Response, token: string) => {
     maxAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
     sameSite: "strict",
-    secure: env.NODE_ENV === "production",
+    secure: cookieIsSecure,
   });
 };
 
@@ -21,7 +22,7 @@ export const clearAuthCookie = (res: Response) => {
   res.clearCookie(COOKIE_NAME, {
     httpOnly: true,
     sameSite: "strict",
-    secure: env.NODE_ENV === "production",
+    secure: cookieIsSecure,
   });
 };
 

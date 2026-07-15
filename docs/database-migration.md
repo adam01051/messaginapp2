@@ -44,7 +44,7 @@ The readiness response must be `{"status":"ready"}`.
 
 ## Deploy and operate
 
-Store `DATABASE_URL`, optional `DIRECT_URL`, `JWT_SECRET`, `CLIENT_ORIGIN`, Cloudinary values, and `NODE_ENV=production` in `backend/.env`. Configure `frontend/.env` with the public `VITE_BACKEND_ORIGIN`. Deploy both services and backend migrations with:
+Store `DATABASE_URL`, optional `DIRECT_URL`, `JWT_SECRET`, `CLIENT_ORIGIN`, `COOKIE_SECURE`, Cloudinary values, and `NODE_ENV=production` in `backend/.env`. Configure `frontend/.env` with the public `VITE_BACKEND_ORIGIN`. Use `COOKIE_SECURE=false` only for temporary direct-HTTP testing and restore `true` when HTTPS is available. Deploy both services and backend migrations with:
 
 ```sh
 ./deploy.sh

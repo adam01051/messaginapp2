@@ -78,6 +78,7 @@ cp frontend/.env.example frontend/.env
 | `DIRECT_URL` | Pooled databases | Direct/session PostgreSQL URL used only by Prisma CLI migrations |
 | `JWT_SECRET` | Yes | Signs authentication cookies; use a long random secret |
 | `CLIENT_ORIGIN` | Production | Public application origin used by Express and Socket.IO CORS |
+| `COOKIE_SECURE` | Production | Defaults to secure cookies; set `false` only for temporary direct-HTTP testing |
 | `CLOUDINARY_NAME` | Production/images | Cloudinary cloud name |
 | `CLOUDINARY_KEY` | Production/images | Cloudinary API key |
 | `CLOUDINARY_SECRET` | Production/images | Cloudinary API secret |
@@ -185,6 +186,7 @@ Use these public values, replacing `SERVER` with the VPS hostname or IP:
 NODE_ENV=production
 PORT=6001
 CLIENT_ORIGIN=https://SERVER:6002
+COOKIE_SECURE=true
 DATABASE_URL=postgresql://...
 # DIRECT_URL=postgresql://...  # recommended when DATABASE_URL is pooled
 JWT_SECRET=replace-with-a-long-random-secret
@@ -227,7 +229,7 @@ Named `node_modules` volumes keep Linux container dependencies separate from loc
 
 Only one backend container should run. Presence and socket routing currently use process memory, so do not use Compose scaling, PM2 cluster mode, or multiple backend replicas until a shared Socket.IO adapter is introduced.
 
-No reverse proxy is included. Direct HTTP ports are sufficient for health/static smoke checks, but production authentication cookies are secure and therefore require HTTPS for real browser login. Add TLS termination before public launch; do not weaken cookie security.
+No reverse proxy is included. For temporary direct-HTTP VPS testing, use `CLIENT_ORIGIN=http://SERVER:6002`, `VITE_BACKEND_ORIGIN=http://SERVER:6001`, and `COOKIE_SECURE=false`. This allows authentication over HTTP but exposes session traffic to interception; restore `COOKIE_SECURE=true` as soon as HTTPS termination is available.
 
 Open firewall access only for the intended public ports. Keep PostgreSQL private to the backend/provider network whenever possible.
 
@@ -238,7 +240,8 @@ After deployment, verify signup/login/logout, one-way contact addition, realtime
 - **`DATABASE_URL must start with...`**: use a standard `postgres://` or `postgresql://` connection URL.
 - **Database is not ready**: run `npm run prisma:migrate:status --prefix backend` and confirm network/SSL access.
 - **Images fail but text works**: confirm all three Cloudinary variables exist in the same runtime environment.
-- **Cookies or sockets fail in production**: confirm the browser URL exactly matches `CLIENT_ORIGIN` and that HTTPS/WebSocket proxying is enabled.
+- **Login succeeds but protected routes return 401 over HTTP**: set `COOKIE_SECURE=false`, redeploy, clear the old site cookies, and log in again. Restore it to `true` with HTTPS.
+- **Cookies or sockets fail behind HTTPS**: confirm the browser URL exactly matches `CLIENT_ORIGIN`, set `COOKIE_SECURE=true`, and verify HTTPS/WebSocket proxying.
 - **Do not run destructive tests**: production database names intentionally fail the integration-test safety guard.
 
 ## Mobile roadmap
