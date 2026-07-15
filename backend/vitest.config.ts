@@ -10,7 +10,7 @@ export default defineConfig({
       NODE_ENV: "test",
       DATABASE_URL: databaseUrl,
       JWT_SECRET: "test-only-secret-key",
-      CLIENT_ORIGIN: "http://localhost:5173",
+      CLIENT_ORIGIN: "http://localhost:6000",
       LOG_LEVEL: "silent",
     },
     coverage: { reporter: ["text", "html"] },

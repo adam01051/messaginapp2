@@ -5,7 +5,7 @@ config();
 
 const schema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-  PORT: z.coerce.number().int().positive().default(5001),
+  PORT: z.coerce.number().int().positive().default(6001),
   DATABASE_URL: z
     .string()
     .url()
@@ -13,7 +13,7 @@ const schema = z.object({
       message: "DATABASE_URL must start with postgresql:// or postgres://",
     }),
   JWT_SECRET: z.string().min(12, "JWT_SECRET must contain at least 12 characters"),
-  CLIENT_ORIGIN: z.string().url().default("http://localhost:5173"),
+  CLIENT_ORIGIN: z.string().url().default("http://localhost:6000"),
   CLOUDINARY_NAME: z.string().optional(),
   CLOUDINARY_KEY: z.string().optional(),
   CLOUDINARY_SECRET: z.string().optional(),
